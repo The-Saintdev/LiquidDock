@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self';" />
+  <title>LiquidLaunch</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="top">
+    <input id="search" type="text" placeholder="Search" autocomplete="off" spellcheck="false" />
+  </div>
+  <main id="grid" aria-label="Applications"></main>
+  <div id="hint">Esc to close · Ctrl+Alt+Space to summon · Ctrl+Alt+Q to quit LiquidLaunch</div>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -2,6 +2,14 @@
 
 ## Unreleased — 2026-07-24
 
+- **New: LiquidLaunch** (`launcher/`) — a real macOS Launchpad-style app launcher
+  built in Electron. Frameless fullscreen Windows 11 acrylic overlay, reads
+  Start Menu shortcuts (97 apps detected on the dev machine), native icon
+  extraction, live search, click/Enter to launch, global hotkey Ctrl+Alt+Space,
+  opens on the active monitor. This is the standalone launcher a taskbar styler
+  can't provide. v0.1 core: enumerate, search, launch, glass. Not yet packaged
+  to an installer.
+
 - **MODS.md correction:** replaced the "Classic Min/Max Animations" suggestion
   with **MacOS Minimize Animation** (Abdullah Masood, v3.1.1+) — the real Apple
   genie minimize + restore/open effect via DWM hook. Added recommended settings.
