@@ -1,0 +1,414 @@
+###############################################################
+# LiquidDock v0.1 Alpha
+# Cloudex Labs
+#
+# An iOS-style liquid glass dock for Windows 11.
+# Built for the Windhawk "Windows 11 Taskbar Styler" mod.
+#
+# This file is the SOURCE OF TRUTH. Edit this, then run
+# build.ps1 to regenerate taskbar-config.json (the file you
+# paste into Windhawk's Advanced tab).
+#
+# Reference architecture: FrostyGlass (guidolamanna), which is
+# itself based on DockLike. All targets below are proven
+# against Windows 11 24H2/25H2 taskbar XAML.
+###############################################################
+
+theme: ""
+clickThroughTaskbar: "1"
+xamlDiagnosticsHandling: alert
+
+###############################################################
+# 1. DESIGN LANGUAGE — the Liquid Glass material
+#    Change these constants and the whole theme follows.
+###############################################################
+styleConstants:
+  # The glass itself: near-clear, luminosity-driven frost.
+  # Low TintOpacity + moderate TintLuminosityOpacity is what
+  # makes it read as "polished glass" instead of "gray acrylic".
+  - Glass=<AcrylicBrush TintColor="#FCFCFF" TintOpacity="0.05" TintLuminosityOpacity="0.22" FallbackColor="#CC1C1C26" />
+
+  # Specular rim — the liquid glass signature. Bright catch-light
+  # on the top edge, faint sides, softer catch-light on the bottom.
+  - Specular=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#A8FFFFFF" Offset="0" /><GradientStop Color="#28FFFFFF" Offset="0.35" /><GradientStop Color="#18FFFFFF" Offset="0.7" /><GradientStop Color="#66FFFFFF" Offset="1" /></LinearGradientBrush>
+
+  # Interaction plates (hover / press bubbles inside the glass)
+  - HoverPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.13" />
+  - PressPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.20" />
+  - ActivePlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.07" />
+
+  # Accent-aware running indicator
+  - AccentGlow=<SolidColorBrush Color="{ThemeResource SystemAccentColorLight2}" />
+  - AttentionGlow=<SolidColorBrush Color="{ThemeResource SystemAccentColorLight2}" Opacity="0.55" />
+
+  # Shape system — big soft radii, nothing sharp
+  - Radius=20
+  - ButtonRadius=13
+  - TipRadius=12
+  - BorderThickness=1
+
+  # Spacing
+  - TrayPadding=5,4,5,4
+
+  # Smooth, GPU-composited motion for icons appearing / reflowing
+  - LiquidMotion=<TransitionCollection><EntranceThemeTransition FromVerticalOffset="20" IsStaggeringEnabled="False" /><RepositionThemeTransition IsStaggeringEnabled="False" /></TransitionCollection>
+
+###############################################################
+# 2. THE DOCK — floating centered glass pill
+###############################################################
+controlStyles:
+  - target: Taskbar.TaskbarFrame
+    styles:
+      - HorizontalAlignment=Center
+      - Width=Auto
+      - MinWidth:=420
+      - MaxWidth:=760
+      - Padding=1,0,1,0
+
+  - target: Taskbar.TaskbarFrame#TaskbarFrame > Grid#RootGrid
+    styles:
+      - Margin=0,0,0,6
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+      - Padding=8,0,8,0
+      - BackgroundSizing=InnerBorderEdge
+
+  # Kill the stock Windows taskbar surface so only our glass shows
+  - target: Taskbar.TaskbarBackground#BackgroundControl > Windows.UI.Xaml.Controls.Grid > Windows.UI.Xaml.Shapes.Rectangle#BackgroundFill
+    styles:
+      - Visibility=Collapsed
+
+  - target: Taskbar.TaskbarFrame > Grid#RootGrid > Taskbar.TaskbarBackground > Grid > Rectangle#BackgroundFill
+    styles:
+      - Visibility=Collapsed
+
+  - target: Rectangle#BackgroundStroke
+    styles:
+      - Visibility=Collapsed
+
+###############################################################
+# 3. THE TRAY — separate floating capsule, pushed to the edge
+#    (fixes the main-screen merge: dock is width-capped at 760
+#    and the tray hugs the right edge)
+###############################################################
+  - target: SystemTray.SystemTrayFrame
+    styles:
+      - HorizontalAlignment=Right
+      - Width=Auto
+      - CornerRadius=$Radius
+
+  - target: Grid#SystemTrayFrameGrid
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+      - Margin=8,0,3,6
+      - Padding=0,0,0,0
+      - BackgroundSizing=InnerBorderEdge
+
+  # Tray icon shaping
+  - target: SystemTray.ChevronIconView
+    styles:
+      - Padding=$TrayPadding
+      - CornerRadius=$ButtonRadius
+
+  - target: SystemTray.NotifyIconView#NotifyItemIcon
+    styles:
+      - Padding=$TrayPadding
+      - CornerRadius=$ButtonRadius
+
+  - target: SystemTray.OmniButton
+    styles:
+      - Padding=$TrayPadding
+      - CornerRadius=$ButtonRadius
+      - MaxWidth=Auto
+
+  - target: SystemTray.CopilotIcon
+    styles:
+      - Padding=$TrayPadding
+      - CornerRadius=$ButtonRadius
+
+  - target: SystemTray.IconView#SystemTrayIcon > Grid#ContainerGrid > ContentPresenter#ContentPresenter > Grid#ContentGrid > SystemTray.TextIconContent > Grid#ContainerGrid
+    styles:
+      - Padding=$TrayPadding
+      - CornerRadius=$ButtonRadius
+
+  - target: SystemTray.StackListView#IconStack > ItemsPresenter > StackPanel > ContentPresenter > SystemTray.IconView#SystemTrayIcon
+    styles:
+      - Padding=$TrayPadding
+      - CornerRadius=$ButtonRadius
+
+  # Notification center button alignment
+  - target: SystemTray.OmniButton#NotificationCenterButton > Grid > ContentPresenter > ItemsPresenter > StackPanel > ContentPresenter > systemtray:IconView#SystemTrayIcon > Grid
+    styles:
+      - Padding=2,2,5,4
+      - CornerRadius=$ButtonRadius
+      - HorizontalAlignment=Center
+
+  - target: SystemTray.OmniButton#NotificationCenterButton > Grid > ContentPresenter > ItemsPresenter > StackPanel > ContentPresenter > SystemTray.IconView#SystemTrayIcon > Grid > Grid > SystemTray.TextIconContent
+    styles:
+      - Visibility=1
+
+  # Hide the show-desktop sliver; keep a slim gripper
+  - target: SystemTray.Stack#ShowDesktopStack
+    styles:
+      - Visibility=1
+
+  - target: Taskbar.Gripper#GripperControl
+    styles:
+      - Width=Auto
+      - MinWidth=12
+
+###############################################################
+# 4. CLOCK
+###############################################################
+  - target: TextBlock#TimeInnerTextBlock
+    styles:
+      - FontSize=13
+      - FontFamily=Segoe UI Variable Display
+      - Margin=0
+      - Padding=0
+      - Width=Auto
+      - MinWidth=Auto
+      - HorizontalAlignment=Left
+      - RenderTransform:=<TranslateTransform X="4" Y="2" />
+
+  - target: TextBlock#DateInnerTextBlock
+    styles:
+      - Visibility=1
+
+###############################################################
+# 5. TASK BUTTONS — glass bubbles, lift on hover,
+#    accent glow underline for running apps
+###############################################################
+  - target: Taskbar.TaskListButton#TaskListButton
+    styles:
+      - CornerRadius=$ButtonRadius
+      - Padding=4.5,4,4.5,4
+
+  # Smooth entrance + reflow motion (GPU theme transitions)
+  - target: Taskbar.TaskListButton
+    styles:
+      - Transitions:=$LiquidMotion
+
+  # Hover / press glass plates (fade via the button's own state transitions)
+  - target: Taskbar.TaskListButtonPanel@CommonStates > Border#BackgroundElement
+    styles:
+      - CornerRadius=$ButtonRadius
+      - Background@ActivePointerOver:=$HoverPlate
+      - Background@InactivePointerOver:=$HoverPlate
+      - Background@ActivePressed:=$PressPlate
+      - Background@InactivePressed:=$PressPlate
+      - Background@ActiveNormal:=$ActivePlate
+
+  # Icon lift + scale on hover, gentle squish on press
+  - target: Taskbar.TaskListButtonPanel@CommonStates > Windows.UI.Xaml.Controls.Image#Icon
+    styles:
+      - RenderTransformOrigin=0.5,0.5
+      - RenderTransform:=<CompositeTransform />
+      - RenderTransform@ActivePointerOver:=<CompositeTransform TranslateY="-2" ScaleX="1.12" ScaleY="1.12" />
+      - RenderTransform@InactivePointerOver:=<CompositeTransform TranslateY="-2" ScaleX="1.12" ScaleY="1.12" />
+      - RenderTransform@ActivePressed:=<CompositeTransform ScaleX="0.94" ScaleY="0.94" />
+      - RenderTransform@InactivePressed:=<CompositeTransform ScaleX="0.94" ScaleY="0.94" />
+
+  # Running indicator: soft glowing accent underline instead of a dot
+  - target: Taskbar.TaskListLabeledButtonPanel@RunningIndicatorStates > Rectangle#RunningIndicator
+    styles:
+      - Height=3
+      - RadiusX=1.5
+      - RadiusY=1.5
+      - Fill=#70FFFFFF
+      - Width@ActiveRunningIndicator=18
+      - Fill@ActiveRunningIndicator:=$AccentGlow
+      - Width@InactiveRunningIndicator=6
+      - Fill@RequestingAttentionRunningIndicator:=$AttentionGlow
+
+###############################################################
+# 6. START, SEARCH, WIDGETS
+###############################################################
+  - target: Taskbar.TaskListButtonPanel#ExperienceToggleButtonRootPanel
+    styles:
+      - Padding=1.5,4,1.5,4
+
+  - target: Taskbar.TaskListButtonPanel#ExperienceToggleButtonRootPanel > Windows.UI.Xaml.Controls.Border#BackgroundElement
+    styles:
+      - CornerRadius=$ButtonRadius
+
+  - target: Windows.UI.Xaml.Controls.Border#SearchPillBackgroundElement
+    styles:
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=14
+      - Margin=0
+
+  - target: TextBlock#SearchBoxTextBlock
+    styles:
+      - Text=Search
+      - FontSize=12
+
+  - target: SearchUx.SearchUI.SearchButtonControl
+    styles:
+      - MaxWidth=130
+      - Margin=-1,0,-1,0
+
+  - target: Taskbar.AugmentedEntryPointButton#AugmentedEntryPointButton > Taskbar.TaskListButtonPanel#ExperienceToggleButtonRootPanel
+    styles:
+      - Margin=0
+      - CornerRadius=$ButtonRadius
+
+  - target: Windows.UI.Xaml.Controls.Grid#AugmentedEntryPointContentGrid
+    styles:
+      - Margin=4,0,0,0
+      - HorizontalAlignment=Auto
+
+###############################################################
+# 7. FLYOUTS, TOOLTIPS, THUMBNAILS — same glass everywhere
+###############################################################
+  - target: Windows.UI.Xaml.Controls.ToolTip > Windows.UI.Xaml.Controls.ContentPresenter#LayoutRoot
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - CornerRadius:=$TipRadius
+
+  - target: Taskbar.TaskItemThumbnailView > Grid@CommonStates > Border#BackgroundBorder
+    styles:
+      - CornerRadius:=$Radius
+
+  - target: Border#HoverFlyoutBackground
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+
+  - target: Taskbar.TaskbarBackground#HoverFlyoutBackgroundControl > Grid > Rectangle#BackgroundFill
+    styles:
+      - Fill:=Transparent
+
+  - target: Windows.UI.Xaml.Controls.Border#OverflowFlyoutBackgroundBorder
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius:=$Radius
+
+  - target: Windows.UI.Xaml.Controls.MenuFlyoutPresenter > Windows.UI.Xaml.Controls.Border
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - CornerRadius:=$TipRadius
+
+  - target: Windows.UI.Xaml.Controls.Grid#ConfirmatorMainGrid
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+
+###############################################################
+# 8. ALT+TAB, SNAP, VIRTUAL DESKTOPS, INPUT SWITCHER
+###############################################################
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.AltTab > Windows.UI.Xaml.Controls.Grid#ModalRootGrid > Border
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+
+  - target: Windows.UI.Xaml.Controls.Grid#ModalRootGrid > Windows.UI.Xaml.Controls.Border#BackgroundElement
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - CornerRadius:=$Radius
+
+  - target: Windows.UI.Xaml.Controls.Border#BackgroundDimmingLayer
+    styles:
+      - Background:=$Glass
+      - CornerRadius=$Radius
+
+  - target: Windows.UI.Xaml.Controls.Border#SnapBarBorder
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+      - RenderTransform:=<TranslateTransform X="0" Y="10" />
+      - Margin=0,0,0,-10
+
+  - target: Windows.UI.Xaml.Controls.Border#SnapPickerBorder
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.VirtualDesktopBarElement#VirtualDesktopBar
+    styles:
+      - CornerRadius=$Radius
+      - Background:=$Glass
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.VirtualDesktopBarElement > Windows.UI.Xaml.Controls.Grid#GridElement > Windows.UI.Xaml.Controls.Border#VirtualDesktopSwitcherBackground
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+
+  - target: Border#VirtualDesktopBarBackground
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+      - Margin=0,0,0,-3
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.SwitchItemListViewItem > Grid > Border
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - CornerRadius=$Radius
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.VirtualDesktopElementThemed > Windows.UI.Xaml.Controls.Grid#MainGrid > Windows.UI.Xaml.Controls.Border#MainBorder
+    styles:
+      - CornerRadius:=$Radius
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - Margin=0,0,0,0
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.VirtualDesktopElementThemed > Windows.UI.Xaml.Controls.Grid#MainGrid > Windows.UI.Xaml.Controls.Border#BorderHighlight
+    styles:
+      - CornerRadius:=$Radius
+      - Visibility=1
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.VirtualDesktopElementThemed > Windows.UI.Xaml.Controls.Grid#MainGrid > Windows.UI.Xaml.Controls.Border#ActiveDesktopPill
+    styles:
+      - CornerRadius:=$Radius
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.NewVirtualDesktopElementThemed#NewVirtualDesktopButtonThemed > Windows.UI.Xaml.Controls.Grid#MainGrid > Windows.UI.Xaml.Controls.Border#MainBorder
+    styles:
+      - CornerRadius:=$Radius
+
+  - target: WindowsInternal.ComposableShell.Experiences.Switcher.NewVirtualDesktopElementThemed#NewVirtualDesktopButtonThemed > Windows.UI.Xaml.Controls.Grid#MainGrid > Windows.UI.Xaml.Controls.Border#BorderHighlight
+    styles:
+      - CornerRadius:=$Radius
+      - Visibility=1
+
+  - target: WindowsInternal.ComposableShell.Experiences.TextInput.Common.InputSwitcher > ContentControl > ContentPresenter > Grid
+    styles:
+      - Background:=$Glass
+      - BorderBrush:=$Specular
+      - BorderThickness=$BorderThickness
+      - CornerRadius=$Radius
+
+  - target: WindowsInternal.ComposableShell.Experiences.TextInput.Common.InputSwitcher > ContentControl > ContentPresenter > Grid > Grid
+    styles:
+      - Background:=Transparent
+      - BorderBrush:=Transparent
