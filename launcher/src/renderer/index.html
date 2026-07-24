@@ -10,24 +10,12 @@
 <body>
   <div id="app">
     <div id="top">
-      <div id="tabs">
-        <button data-view="apps" class="active">Apps</button>
-        <button data-view="widgets">Widgets</button>
-      </div>
       <input id="search" type="text" placeholder="Search" autocomplete="off" spellcheck="false" />
     </div>
-
-    <section id="view-apps">
-      <div id="pages"></div>
-      <div id="dots"></div>
-    </section>
-
-    <section id="view-widgets" hidden>
-      <div id="widgets"></div>
-    </section>
+    <div id="pages"></div>
+    <div id="dots"></div>
   </div>
-
-  <div id="hint">Esc close · Ctrl+Alt+Space summon · Ctrl+Alt+Q quit · scroll / ← → to page</div>
+  <div id="hint">Esc close · top-left corner or Ctrl+Alt+Space to open · scroll / ← → to page</div>
   <script src="renderer.js"></script>
 </body>
 </html>

@@ -10,5 +10,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^43.2.0"
+  },
+  "dependencies": {
+    "koffi": "^3.1.2"
   }
 }

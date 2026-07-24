@@ -1,9 +1,14 @@
-# LiquidLaunch
+# LiquidLaunch + LiquidBoard
 
-A macOS **Launchpad**-style app launcher for Windows 11, matching LiquidDock's
-dark liquid glass. Fullscreen frosted overlay, live search, click to launch.
+A macOS-style desktop for Windows 11, in two layers that sit around LiquidDock
+(your taskbar stays exactly as it is):
 
-**v0.1 Alpha — Cloudex Labs**
+1. **LiquidBoard** — glass **widgets pinned to the desktop wallpaper**, behind
+   your windows (like macOS desktop widgets). Always visible, click-through.
+2. **LiquidLaunch** — a **Launchpad** app grid you summon from the **top-left
+   hot corner** (slam the mouse into the corner) or `Ctrl+Alt+Space`.
+
+**v0.3 Alpha — Cloudex Labs**
 
 ## Run it
 
@@ -13,67 +18,65 @@ npm install      # first time only (downloads Electron)
 npm start
 ```
 
-- **Ctrl + Alt + Space** — summon / dismiss the launcher from anywhere
-- **Apps / Widgets tabs** (or **Tab** key) — switch between the app grid and the
-  widgets dashboard
-- **Type** — filters apps instantly
-- **Enter** — launches the first match
-- **← / →** or **scroll** — flip between Launchpad pages
-- **Esc** or click empty space — dismiss
-- **Ctrl + Alt + Q** — fully quit LiquidLaunch
+For a real, window-less background run, launch `start-liquidlaunch.vbs` instead
+(pin it or add it to `shell:startup`). Boot-on-login + a packaged `.exe` are the
+next milestone.
 
-## Widgets
+### Controls
 
-The Widgets tab shows a live dashboard in matching glass cards:
-- **Clock** — live time + full date
-- **Weather** — current conditions + temperature (IP-based location via
-  open-meteo; shows "Offline" with no network)
-- **System** — CPU load, memory used/total, battery %
-- **Calendar** — current month with today highlighted
+- **Top-left corner** (or **Ctrl+Alt+Space**) — open the app launcher
+- **Type** — filter apps · **Enter** — launch top match
+- **← / →** or **scroll** — flip Launchpad pages
+- **Esc** or click empty space — dismiss the launcher
+- **Ctrl+Alt+Q** — quit everything
 
-> Privacy note: the weather widget makes an outbound request to determine your
-> approximate city from your IP. Nothing is stored. Remove the Weather card (or
-> the `get-weather` handler in `src/main.js`) if you'd rather it never reaches
-> the network.
+### Clear the desktop (recommended, for the full effect)
 
-It stays running in the background after first launch so the hotkey is instant.
+The widgets are meant to be the *only* thing on your desktop:
 
-## How it works
+```powershell
+# from the repo root
+powershell -ExecutionPolicy Bypass -File clear-desktop.ps1 -Hide
+```
 
-- **App list:** reads `.lnk` shortcuts from the all-users and current-user
-  Start Menu folders, de-dupes, and filters out uninstallers/readmes.
-- **Icons:** extracted natively from each shortcut via Electron's
-  `app.getFileIcon` — real shell icons, no icon packs needed.
-- **Glass:** the window uses Windows 11's native `acrylic` background material,
-  with a dark tint + specular search field on top to match the dock.
-- **Multi-monitor:** opens on whichever monitor your mouse is on.
+## Widgets on the board
 
-## Make it feel native (optional)
+Clock, Weather (IP-located via open-meteo), System (CPU / memory / battery),
+and a month Calendar — glass cards stacked in the top-right of the desktop.
 
-- **Launch on the Win key / Start button:** bind `Ctrl+Alt+Space` at the OS
-  level, or replace the Start button action with a shortcut to this app. Easiest
-  path: create a shortcut to `launcher\start-liquidlaunch.vbs` (below) and pin
-  it, or set it to run at login (Win+R → `shell:startup` → drop a shortcut in).
-- **Run at login:** put a shortcut to the launcher in the Startup folder so the
-  hotkey works from boot.
+## How the desktop pinning works
+
+Windows hosts the desktop icons in a `SHELLDLL_DefView` window. On this build
+(Win11 26200) that lives under **Progman**, so `src/win32-desktop.js` uses
+[koffi](https://koffi.dev) (a prebuilt FFI — no compiler needed) to call the
+Win32 `SetParent` and re-parent the board window into Progman. That makes it
+render on the desktop, beneath normal app windows. The board is transparent and
+click-through, so only the cards paint and the desktop stays fully usable.
+
+> `node src/win32-debug.js` dumps the live desktop window tree if pinning ever
+> misbehaves after a Windows update.
+
+## Architecture
+
+```
+src/
+  main.js          orchestrates both windows + hot corner + desktop pin
+  win32-desktop.js  koffi Progman/WorkerW pinning
+  preload.js        context-isolated bridge (getApps/launch/getSystem/getWeather)
+  renderer/         LiquidLaunch — the app grid overlay (acrylic)
+  board/            LiquidBoard  — the desktop widgets (transparent, pinned)
+```
 
 ## Roadmap
 
-- **Next: package as a standalone `.exe`** (electron-builder) + run on boot +
-  bind to the Start button so it replaces the Windows launcher
-- Drag-to-reorder + folders (drag one app onto another)
-- Pin the grid to the wallpaper (blur the desktop only, not windows)
-- More widgets (media/now-playing, quick toggles, notes) + widget layout config
-- Frequency/recent sorting
+- **Next: package to a standalone `.exe`** (electron-builder) + run at login +
+  wire the launcher to the Start button
+- Drag-to-reorder + folders in the launcher
+- More widgets + draggable widget layout on the board
+- Per-monitor board
 
 ## Self-test
 
-`electron . --smoke` boots the whole app headless (window + renderer + icon
-pipeline + widgets), writes findings to `smoke-result.json`, and quits — used to
-verify changes without popping the fullscreen overlay.
-
-## Honesty
-
-This is a real, standalone launcher — the "Launchpad" piece that a taskbar
-styler can't provide. v0.1 is a working core: enumerate, search, launch, glass.
-It is not yet packaged into a distributable installer; that's the next step.
+`electron . --smoke` boots both windows headless (renderer + board + icon
+pipeline + desktop-pin probe), writes `smoke-result.json`, and quits — verifies
+changes without popping any window.

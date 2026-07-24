@@ -2,6 +2,23 @@
 
 ## Unreleased — 2026-07-24
 
+### LiquidLaunch v0.3 — desktop widget layer rearchitecture
+
+Reworked from a single fullscreen popup into two layers around the taskbar:
+
+- **LiquidBoard** — widgets now live **pinned to the desktop wallpaper** (behind
+  windows, click-through), not inside a popup. Uses koffi FFI to call Win32
+  `SetParent`, re-parenting the transparent board window into Progman. Handles
+  the Win11 26200 layout where `SHELLDLL_DefView` sits under Progman (probe
+  confirmed `kind: progman`). New `src/win32-desktop.js` + `src/win32-debug.js`.
+- **LiquidLaunch** — the app grid is now summoned from the **top-left hot
+  corner** (mouse-into-corner polling) or Ctrl+Alt+Space; widgets removed from
+  it (they're on the board now).
+- Two-window main process; shared preload; `src/board/` added, `src/renderer/`
+  slimmed to apps-only.
+- Smoke test now boots both windows and includes the desktop-pin probe.
+- Dependency: `koffi` (prebuilt, no native compile).
+
 - **New: LiquidLaunch** (`launcher/`) — a real macOS Launchpad-style app launcher
   built in Electron. Frameless fullscreen Windows 11 acrylic overlay, reads
   Start Menu shortcuts (97 apps detected on the dev machine), native icon
