@@ -23,19 +23,29 @@ xamlDiagnosticsHandling: alert
 #    Change these constants and the whole theme follows.
 ###############################################################
 styleConstants:
-  # The glass itself: near-clear, luminosity-driven frost.
-  # Low TintOpacity + moderate TintLuminosityOpacity is what
-  # makes it read as "polished glass" instead of "gray acrylic".
-  - Glass=<AcrylicBrush TintColor="#FCFCFF" TintOpacity="0.05" TintLuminosityOpacity="0.22" FallbackColor="#CC1C1C26" />
+  # THE GLASS — a real frosted material, not a see-through pane.
+  # TintLuminosityOpacity is the frost: it pulls in the blurred
+  # backdrop luminance so the surface reads as milky glass. Keep
+  # TintOpacity low so it stays colour-neutral and bright (iOS),
+  # but keep luminosity HIGH so you see glass, not the wallpaper.
+  # -> To darken it, change TintColor to a dark hex (e.g. #202028).
+  - Glass=<AcrylicBrush TintColor="#EAEEF7" TintOpacity="0.18" TintLuminosityOpacity="0.72" FallbackColor="#E6E4E9F2" />
+
+  # A second, slightly denser glass for flyouts/menus that sit over
+  # busy content and need to stay legible.
+  - GlassDense=<AcrylicBrush TintColor="#E4E9F4" TintOpacity="0.24" TintLuminosityOpacity="0.85" FallbackColor="#F2E4E9F4" />
 
   # Specular rim — the liquid glass signature. Bright catch-light
   # on the top edge, faint sides, softer catch-light on the bottom.
-  - Specular=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#A8FFFFFF" Offset="0" /><GradientStop Color="#28FFFFFF" Offset="0.35" /><GradientStop Color="#18FFFFFF" Offset="0.7" /><GradientStop Color="#66FFFFFF" Offset="1" /></LinearGradientBrush>
+  - Specular=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#C8FFFFFF" Offset="0" /><GradientStop Color="#38FFFFFF" Offset="0.4" /><GradientStop Color="#20FFFFFF" Offset="0.75" /><GradientStop Color="#70FFFFFF" Offset="1" /></LinearGradientBrush>
 
   # Interaction plates (hover / press bubbles inside the glass)
-  - HoverPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.13" />
-  - PressPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.20" />
-  - ActivePlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.07" />
+  - HoverPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.16" />
+  - PressPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.24" />
+  - ActivePlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.10" />
+
+  # Active app: a glowing accent border ring around the button.
+  - ActiveRing=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="{ThemeResource SystemAccentColorLight2}" Offset="0" /><GradientStop Color="{ThemeResource SystemAccentColor}" Offset="1" /></LinearGradientBrush>
 
   # Accent-aware running indicator
   - AccentGlow=<SolidColorBrush Color="{ThemeResource SystemAccentColorLight2}" />
@@ -54,25 +64,35 @@ styleConstants:
   - LiquidMotion=<TransitionCollection><EntranceThemeTransition FromVerticalOffset="20" IsStaggeringEnabled="False" /><RepositionThemeTransition IsStaggeringEnabled="False" /></TransitionCollection>
 
 ###############################################################
-# 2. THE DOCK — floating centered glass pill
+# 2. THE DOCK — floating glass pill, left-biased, grows to fit
+#    all open apps. Width=Auto + a high MaxWidth means the pill
+#    hugs its contents up to nearly full width before capping.
 ###############################################################
 controlStyles:
   - target: Taskbar.TaskbarFrame
     styles:
-      - HorizontalAlignment=Center
+      - HorizontalAlignment=Left
       - Width=Auto
-      - MinWidth:=420
-      - MaxWidth:=760
+      - MinWidth:=520
+      - MaxWidth:=1600
       - Padding=1,0,1,0
+
+  - target: Taskbar.TaskbarFrame#TaskbarFrame
+    styles:
+      - HorizontalAlignment=Left
+      - Width=Auto
+      - MinWidth:=520
+      - MaxWidth:=1600
 
   - target: Taskbar.TaskbarFrame#TaskbarFrame > Grid#RootGrid
     styles:
-      - Margin=0,0,0,6
+      # left margin (12) shifts the whole dock left off the corner
+      - Margin=12,0,0,6
       - Background:=$Glass
       - BorderBrush:=$Specular
       - BorderThickness=$BorderThickness
       - CornerRadius=$Radius
-      - Padding=8,0,8,0
+      - Padding=10,0,10,0
       - BackgroundSizing=InnerBorderEdge
 
   # Kill the stock Windows taskbar surface so only our glass shows
@@ -194,15 +214,26 @@ controlStyles:
     styles:
       - Transitions:=$LiquidMotion
 
-  # Hover / press glass plates (fade via the button's own state transitions)
+  # Hover / press glass plates + ACTIVE APP GLOWING BORDER.
+  # The active (foreground) app gets a bright accent ring drawn
+  # right on its button background element. Border animates in via
+  # the panel's built-in CommonStates transitions -> soft, not snappy.
   - target: Taskbar.TaskListButtonPanel@CommonStates > Border#BackgroundElement
     styles:
       - CornerRadius=$ButtonRadius
+      - BorderThickness=0
       - Background@ActivePointerOver:=$HoverPlate
       - Background@InactivePointerOver:=$HoverPlate
       - Background@ActivePressed:=$PressPlate
       - Background@InactivePressed:=$PressPlate
+      # Active app: filled glass plate + glowing accent ring
       - Background@ActiveNormal:=$ActivePlate
+      - BorderBrush@ActiveNormal:=$ActiveRing
+      - BorderThickness@ActiveNormal=1.5
+      - BorderBrush@ActivePointerOver:=$ActiveRing
+      - BorderThickness@ActivePointerOver=1.5
+      - BorderBrush@ActivePressed:=$ActiveRing
+      - BorderThickness@ActivePressed=1.5
 
   # Icon lift + scale on hover, gentle squish on press
   - target: Taskbar.TaskListButtonPanel@CommonStates > Windows.UI.Xaml.Controls.Image#Icon
@@ -214,16 +245,20 @@ controlStyles:
       - RenderTransform@ActivePressed:=<CompositeTransform ScaleX="0.94" ScaleY="0.94" />
       - RenderTransform@InactivePressed:=<CompositeTransform ScaleX="0.94" ScaleY="0.94" />
 
-  # Running indicator: soft glowing accent underline instead of a dot
+  # Running indicator: a glowing accent DOT.
+  # Active  -> bright round accent dot (paired with the ring above).
+  # Inactive-> tiny dim dot. Attention -> Windows flashes it natively.
   - target: Taskbar.TaskListLabeledButtonPanel@RunningIndicatorStates > Rectangle#RunningIndicator
     styles:
-      - Height=3
-      - RadiusX=1.5
-      - RadiusY=1.5
-      - Fill=#70FFFFFF
-      - Width@ActiveRunningIndicator=18
+      - Height=5
+      - RadiusX=2.5
+      - RadiusY=2.5
+      - Fill=#66FFFFFF
+      - Width@ActiveRunningIndicator=6
+      - Height@ActiveRunningIndicator=6
       - Fill@ActiveRunningIndicator:=$AccentGlow
-      - Width@InactiveRunningIndicator=6
+      - Width@InactiveRunningIndicator=4
+      - Fill@InactiveRunningIndicator=#55FFFFFF
       - Fill@RequestingAttentionRunningIndicator:=$AttentionGlow
 
 ###############################################################
@@ -269,7 +304,7 @@ controlStyles:
 ###############################################################
   - target: Windows.UI.Xaml.Controls.ToolTip > Windows.UI.Xaml.Controls.ContentPresenter#LayoutRoot
     styles:
-      - Background:=$Glass
+      - Background:=$GlassDense
       - BorderBrush:=$Specular
       - BorderThickness:=$BorderThickness
       - CornerRadius:=$TipRadius
@@ -298,7 +333,7 @@ controlStyles:
 
   - target: Windows.UI.Xaml.Controls.MenuFlyoutPresenter > Windows.UI.Xaml.Controls.Border
     styles:
-      - Background:=$Glass
+      - Background:=$GlassDense
       - BorderBrush:=$Specular
       - BorderThickness:=$BorderThickness
       - CornerRadius:=$TipRadius

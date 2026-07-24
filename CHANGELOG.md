@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2 Alpha — 2026-07-24
+
+- **Material fix:** glass was reading as plain transparent. Raised
+  `TintLuminosityOpacity` 0.22 → 0.72 and added real tint so the dock is now a
+  frosted milky-glass material you can actually see, not a see-through pane.
+  Added `GlassDense` (0.85 luminosity) for tooltips and menus over busy content.
+- **Wider + left-biased:** dock is now `HorizontalAlignment=Left` with a 12 px
+  left margin and `MaxWidth 1600`, so it shifts left and grows to contain every
+  open app icon instead of clipping at 760 px.
+- **Active-app indicator:** the foreground app now gets a glowing accent ring
+  (1.5 px `ActiveRing` gradient border) plus a bright round accent dot. Inactive
+  apps show a small dim dot; the attention state uses Windows' native flash.
+- Stronger specular rim (brighter top catch-light).
+
 ## v0.1 Alpha — 2026-07-24
 
 First release of LiquidDock.
