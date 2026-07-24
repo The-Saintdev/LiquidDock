@@ -253,19 +253,21 @@ controlStyles:
   #  - hover        -> plate blooms brighter (below)
   #  - activate     -> accent ring + dot appear
 
-  # Running indicator: a glowing accent DOT.
-  # Active  -> bright round accent dot (paired with the ring above).
-  # Inactive-> tiny dim dot. Attention -> Windows flashes it natively.
+  # Running indicator: a glowing accent HAIRLINE.
+  # Active app => a wide, bright accent underline hairline, paired
+  # with the accent ring/border above. Together: glow on hairline
+  # AND border. Inactive => short dim hairline. Attention => native flash.
   - target: Taskbar.TaskListLabeledButtonPanel@RunningIndicatorStates > Rectangle#RunningIndicator
     styles:
-      - Height=5
-      - RadiusX=2.5
-      - RadiusY=2.5
+      - Height=3
+      - RadiusX=1.5
+      - RadiusY=1.5
       - Fill=#66FFFFFF
-      - Width@ActiveRunningIndicator=6
-      - Height@ActiveRunningIndicator=6
+      - Width@ActiveRunningIndicator=26
+      - Height@ActiveRunningIndicator=3
       - Fill@ActiveRunningIndicator:=$AccentGlow
-      - Width@InactiveRunningIndicator=4
+      - Width@InactiveRunningIndicator=7
+      - Height@InactiveRunningIndicator=3
       - Fill@InactiveRunningIndicator=#55FFFFFF
       - Fill@RequestingAttentionRunningIndicator:=$AttentionGlow
 

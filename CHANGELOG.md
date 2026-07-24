@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.3 Alpha — 2026-07-24
+
+- **Active app** now shows accent glow on **both** a wide underline hairline
+  (26 px) and the surrounding ring/border (2 px `ActiveRing` gradient).
+- Removed the non-firing hover RenderTransform (the shell owns task-button
+  transforms; documented in the YAML and in MODS.md).
+- **New: LiquidStart** — matching dark-glass Start Menu config
+  (`LiquidStart.yaml` → `start-menu-config.json`) for the Windows 11 Start Menu
+  Styler mod, with an optional Recommended-feed hide for an apps-first layout.
+- **New: `build.ps1` is generic** — one builder now compiles any styler YAML
+  (taskbar + start menu) by preserving arbitrary top-level keys.
+- **New: `clear-desktop.ps1`** — non-destructive hide/show of desktop icons.
+- **New: `MODS.md`** — the full, honestly-labelled macOS conversion stack:
+  which existing Windhawk mods to add (Taskbar Dock Animation Plus for hover
+  magnification, Classic Min/Max Animations), how to install our Start Menu
+  glass, desktop clearing, and widgets guidance.
+
 ## v0.2 Alpha — 2026-07-24
 
 - **Material fix:** glass was reading as plain transparent. Raised

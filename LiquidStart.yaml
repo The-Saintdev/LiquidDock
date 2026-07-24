@@ -1,0 +1,91 @@
+###############################################################
+# LiquidStart — matching glass Start Menu for LiquidDock
+# Cloudex Labs
+#
+# For the Windhawk "Windows 11 Start Menu Styler" mod.
+# Build with build.ps1 -> start-menu-config.json, then paste
+# into that mod's Settings tab (Textual mode) and Save.
+#
+# NOTE: This restyles the real Windows 11 Start Menu into the
+# same dark liquid glass as the dock. It is NOT a macOS Launchpad
+# (a fullscreen app grid) — that would need a separate launcher
+# app, not a styler. What you get: dark glass panel, big soft
+# radius, specular rim, matching search + tiles, and (optionally)
+# a hidden "Recommended" section for a cleaner, app-first layout.
+###############################################################
+
+theme: ""
+disableNewStartMenuLayout: ""
+webContentCustomJs: ""
+
+###############################################################
+# Material — same language as the dock. WindhawkBlur is a true
+# gaussian blur the Start Menu Styler supports (stronger than
+# acrylic), so the glass reads deep here.
+###############################################################
+styleConstants:
+  - Glass=<WindhawkBlur BlurAmount="40" TintColor="#D924262F" />
+  - GlassDense=<WindhawkBlur BlurAmount="55" TintColor="#EC1B1D26" />
+  - Specular=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#C8FFFFFF" Offset="0" /><GradientStop Color="#38FFFFFF" Offset="0.4" /><GradientStop Color="#20FFFFFF" Offset="0.75" /><GradientStop Color="#70FFFFFF" Offset="1" /></LinearGradientBrush>
+  - HoverPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.10" />
+  - CornerRadius=18
+  - TileRadius=10
+  - BorderThickness=1
+
+###############################################################
+# The Start Menu panel itself
+###############################################################
+controlStyles:
+  - target: Border#AcrylicBorder
+    styles:
+      - Background:=$Glass
+      - CornerRadius=$CornerRadius
+      - BorderThickness=$BorderThickness
+      - BorderBrush:=$Specular
+
+  - target: Border#AppBorder
+    styles:
+      - Background:=$Glass
+      - CornerRadius:=$CornerRadius
+      - BorderThickness:=$BorderThickness
+      - BorderBrush:=$Specular
+
+  # Search box -> rounded glass field
+  - target: StartDocked.SearchBoxToggleButton
+    styles:
+      - Height=34
+      - CornerRadius=16
+      - Margin=32,28,32,20
+
+  # Pinned + all-apps tiles: soft rounded
+  - target: StartMenu.PinnedList#StartMenuPinnedList
+    styles:
+      - Padding=0
+
+  # Context menus in matching dense glass
+  - target: Windows.UI.Xaml.Controls.MenuFlyoutPresenter > Windows.UI.Xaml.Controls.Border
+    styles:
+      - Background:=$GlassDense
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - CornerRadius:=12
+
+  - target: Windows.UI.Xaml.Controls.ToolTip > Windows.UI.Xaml.Controls.ContentPresenter#LayoutRoot
+    styles:
+      - Background:=$GlassDense
+      - BorderBrush:=$Specular
+      - BorderThickness:=$BorderThickness
+      - CornerRadius:=10
+
+  ###############################################################
+  # OPTIONAL — cleaner, more mac-like "apps first" layout.
+  # Uncomment (remove the leading "# ") to hide the Recommended
+  # feed. If your Windows build changes and Start looks broken,
+  # comment these back out and rebuild.
+  ###############################################################
+  # - target: Windows.UI.Xaml.Controls.Grid#TopLevelSuggestionsListHeader
+  #   styles:
+  #     - Visibility=Collapsed
+  # - target: Windows.UI.Xaml.Controls.Grid#SuggestionsParentContainer
+  #   styles:
+  #     - Visibility=Collapsed
