@@ -7,6 +7,7 @@ const { app, BrowserWindow, ipcMain, shell, globalShortcut, screen } = require('
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const https = require('https');
 
 let win = null;
 
@@ -97,7 +98,9 @@ function toggle() {
   else showLauncher();
 }
 
-const gotLock = app.requestSingleInstanceLock();
+const isSmoke = process.argv.includes('--smoke');
+// Smoke tests must never early-quit on the single-instance lock.
+const gotLock = isSmoke ? true : app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
@@ -105,18 +108,30 @@ if (!gotLock) {
   app.on('second-instance', showLauncher);
 
   app.whenReady().then(() => {
-    const smoke = process.argv.includes('--smoke');
+    const smoke = isSmoke;
     createWindow();
     // Global hotkey to summon the launcher from anywhere.
     globalShortcut.register('Control+Alt+Space', toggle);
     globalShortcut.register('Control+Alt+Q', () => app.quit());
 
     if (smoke) {
-      // Headless self-test: boot window + renderer + icon pipeline, never show.
-      win.webContents.on('console-message', (_e, _l, m) => console.log('RENDERER:', m));
-      win.webContents.on('preload-error', (_e, _p, err) => console.log('PRELOAD ERROR:', err));
-      win.webContents.on('did-fail-load', (_e, code, desc) => console.log('LOAD FAIL:', code, desc));
-      setTimeout(() => { console.log('SMOKE DONE'); app.quit(); }, 7000);
+      // Headless self-test: boot window + renderer + icon pipeline + widgets,
+      // never show, and write findings to a file (GUI-subsystem stdout is
+      // unreliable on Windows).
+      const resultPath = path.join(__dirname, '..', 'smoke-result.json');
+      const logs = [];
+      const rec = (tag, parts) => logs.push({ tag, parts });
+      win.loadFile(path.join(__dirname, 'renderer', 'index.html'), { search: 'smoke' });
+      win.webContents.on('console-message', (...args) => {
+        rec('console', args.map((x) => (x && typeof x === 'object') ? (x.message ?? '[obj]') : x));
+      });
+      win.webContents.on('preload-error', (_e, p, err) => rec('preload-error', [p, String(err)]));
+      win.webContents.on('did-fail-load', (_e, code, desc) => rec('did-fail-load', [code, desc]));
+      process.on('uncaughtException', (e) => rec('main-uncaught', [String(e && e.stack)]));
+      setTimeout(() => {
+        try { fs.writeFileSync(resultPath, JSON.stringify(logs, null, 2)); } catch {}
+        app.quit();
+      }, 7000);
       return;
     }
     showLauncher();
@@ -130,3 +145,62 @@ ipcMain.handle('get-apps', () => enumerateApps());
 ipcMain.on('launch', (_e, p) => { shell.openPath(p); hideLauncher(); });
 ipcMain.on('hide', hideLauncher);
 ipcMain.on('quit', () => app.quit());
+
+// ---------- Widgets: system stats + weather ----------
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function cpuSample() {
+  let idle = 0, total = 0;
+  for (const c of os.cpus()) {
+    for (const t in c.times) total += c.times[t];
+    idle += c.times.idle;
+  }
+  return { idle, total };
+}
+async function cpuUsage() {
+  const a = cpuSample();
+  await sleep(200);
+  const b = cpuSample();
+  const idle = b.idle - a.idle;
+  const total = b.total - a.total;
+  return total > 0 ? 1 - idle / total : 0;
+}
+
+ipcMain.handle('get-system', async () => ({
+  cpu: await cpuUsage(),
+  memUsed: os.totalmem() - os.freemem(),
+  memTotal: os.totalmem(),
+  host: os.hostname(),
+}));
+
+function getJSON(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { 'User-Agent': 'LiquidLaunch' } }, (r) => {
+      let d = '';
+      r.on('data', (c) => (d += c));
+      r.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
+    }).on('error', reject);
+  });
+}
+
+let weatherCache = null;
+let weatherAt = 0;
+ipcMain.handle('get-weather', async () => {
+  if (weatherCache && Date.now() - weatherAt < 10 * 60 * 1000) return weatherCache;
+  try {
+    // IP-based location (only the request itself; no stored data) then open-meteo.
+    const loc = await getJSON('https://ipapi.co/json/');
+    const w = await getJSON(
+      `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,weather_code`
+    );
+    weatherCache = {
+      temp: Math.round(w.current.temperature_2m),
+      code: w.current.weather_code,
+      city: loc.city || '',
+    };
+    weatherAt = Date.now();
+    return weatherCache;
+  } catch {
+    return null;
+  }
+});

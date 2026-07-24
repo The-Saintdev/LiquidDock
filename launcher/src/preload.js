@@ -6,5 +6,7 @@ contextBridge.exposeInMainWorld('liquid', {
   launch: (p) => ipcRenderer.send('launch', p),
   hide: () => ipcRenderer.send('hide'),
   quit: () => ipcRenderer.send('quit'),
+  getSystem: () => ipcRenderer.invoke('get-system'),
+  getWeather: () => ipcRenderer.invoke('get-weather'),
   onReset: (cb) => ipcRenderer.on('reset', () => cb()),
 });

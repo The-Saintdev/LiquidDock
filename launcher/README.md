@@ -14,10 +14,27 @@ npm start
 ```
 
 - **Ctrl + Alt + Space** — summon / dismiss the launcher from anywhere
+- **Apps / Widgets tabs** (or **Tab** key) — switch between the app grid and the
+  widgets dashboard
 - **Type** — filters apps instantly
 - **Enter** — launches the first match
+- **← / →** or **scroll** — flip between Launchpad pages
 - **Esc** or click empty space — dismiss
 - **Ctrl + Alt + Q** — fully quit LiquidLaunch
+
+## Widgets
+
+The Widgets tab shows a live dashboard in matching glass cards:
+- **Clock** — live time + full date
+- **Weather** — current conditions + temperature (IP-based location via
+  open-meteo; shows "Offline" with no network)
+- **System** — CPU load, memory used/total, battery %
+- **Calendar** — current month with today highlighted
+
+> Privacy note: the weather widget makes an outbound request to determine your
+> approximate city from your IP. Nothing is stored. Remove the Weather card (or
+> the `get-weather` handler in `src/main.js`) if you'd rather it never reaches
+> the network.
 
 It stays running in the background after first launch so the hotkey is instant.
 
@@ -42,11 +59,18 @@ It stays running in the background after first launch so the hotkey is instant.
 
 ## Roadmap
 
-- Package as a standalone `.exe` (electron-builder) so it runs without `npm`
-- Pages + drag-to-reorder, folders
+- **Next: package as a standalone `.exe`** (electron-builder) + run on boot +
+  bind to the Start button so it replaces the Windows launcher
+- Drag-to-reorder + folders (drag one app onto another)
 - Pin the grid to the wallpaper (blur the desktop only, not windows)
-- Bind directly to the Start button / a hot corner
+- More widgets (media/now-playing, quick toggles, notes) + widget layout config
 - Frequency/recent sorting
+
+## Self-test
+
+`electron . --smoke` boots the whole app headless (window + renderer + icon
+pipeline + widgets), writes findings to `smoke-result.json`, and quits — used to
+verify changes without popping the fullscreen overlay.
 
 ## Honesty
 
