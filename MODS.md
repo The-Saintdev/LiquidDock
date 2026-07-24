@@ -34,16 +34,30 @@ dual-monitor setup. Run it *alongside* our Taskbar Styler config; they stack.
 > button transforms. This mod hooks the shell in C++ to win that fight. No
 > reason for us to reinvent it.
 
-## 3. macOS window open/close & minimize animation — USE EXISTING MOD ✅
+## 3. REAL macOS genie minimize + open animation — USE EXISTING MOD ✅
 
-A true macOS “genie” minimize isn’t available, but the closest shipping option:
+Correction to earlier advice: do **NOT** use the "Classic Min/Max" mod — that's
+the old Windows titlebar-zoom, not Mac. The genuine genie effect exists:
 
-**Install:** **“Classic Minimize/Maximize Animations”**
-([mod page](https://windhawk.net/mods/classic-min-max-animations)) for smoother,
-more pronounced window animations. Combined with Windows’ built-in animation
-settings (System → About → Advanced system settings → Performance → “Animate
-windows when minimizing and maximizing” ON), this is as close to the mac
-open/close feel as Windows exposes without a custom DWM hook.
+**Install:** **"MacOS Minimize Animation"** by Abdullah Masood
+([mod page](https://windhawk.net/mods/macos-minimize-animation), v3.1.1+).
+It's the real Apple genie: windows warp and flow into the taskbar on minimize
+and reverse on restore, rendered with a Direct2D mesh warp. This is a
+compiled C++ mod that hooks DWM composition — exactly the kind of thing that is
+impossible from styler YAML, and it already exists and is maintained, so we use
+it rather than writing a worse copy.
+
+**Recommended settings** (in the mod's Settings tab):
+- Animation duration: ~250–350 ms (Mac feel; lower = snappier)
+- **Animate window restore:** ON (gives you the reverse genie on open)
+- **Animate app launch (experimental):** ON if you want apps to genie-open too
+- Animation style: **Modern** (Direct2D mesh) — smoother than Classic strip
+- Multi-monitor support (experimental): ON (you're dual-monitor)
+- Excluded programs: add anything that flickers, if needed
+
+> On a real Mac, clicking a Dock icon does NOT minimize a focused app — you
+> minimize with the yellow button and it genies into the Dock. This mod gives
+> you that genie. See the note below about Windows' click-to-minimize.
 
 ## 4. Start Menu — matching glass, DONE ✅ (this repo)
 
@@ -98,15 +112,32 @@ if you want it — say the word.
 1. Taskbar Styler + `taskbar-config.json`  ✅ *(you have this)*
 2. Start Menu Styler + `start-menu-config.json`
 3. Taskbar Dock Animation Plus  *(the hover magnification)*
-4. Classic Min/Max Animations
+4. **MacOS Minimize Animation**  *(the real genie minimize + open)*
 5. `clear-desktop.ps1 -Hide`
 6. Widgets (Rainmeter glass skin) — optional
+
+## About "click-to-minimize" (the thing you noticed)
+
+When you click a taskbar icon whose window is already in front, Windows
+**minimizes** it; click again to restore. That's standard Windows 11 behavior —
+LiquidDock's styling does **not** change it (a theme can only change looks, not
+click logic). On a Mac the Dock never minimizes on click; it just focuses.
+
+Options:
+- **Keep it** — with the genie mod installed, that minimize now plays the Mac
+  genie animation, so it already *feels* Mac-like.
+- **Change what clicks do** — there are dedicated click-behavior mods:
+  [Cycle through taskbar windows on click](https://windhawk.net/mods/taskbar-left-click-cycle)
+  and [Middle click to close on the taskbar](https://windhawk.net/mods/taskbar-button-click)
+  (middle-click to quit an app, Mac-ish). There is no clean native toggle to
+  make left-click *never* minimize, but these cover most of what people want.
 
 ## What is genuinely NOT possible without a big custom project
 
 Being straight with you so you don’t chase ghosts:
 
-- A real **genie/suck minimize** animation (needs a custom DWM composition hook).
+- ~~A real genie/suck minimize animation~~ — **SOLVED**, see section 3
+  (MacOS Minimize Animation mod).
 - A true **Launchpad** fullscreen app grid (needs a standalone launcher app).
 - **Wallpaper-adaptive** glass tint & **spring physics** on the dock
   (this is the LiquidDock+ code-mod idea; a real C++ project I can start when

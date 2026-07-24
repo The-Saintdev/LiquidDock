@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — 2026-07-24
+
+- **MODS.md correction:** replaced the "Classic Min/Max Animations" suggestion
+  with **MacOS Minimize Animation** (Abdullah Masood, v3.1.1+) — the real Apple
+  genie minimize + restore/open effect via DWM hook. Added recommended settings.
+- Documented that taskbar click-to-minimize is stock Windows 11 behavior (not
+  something the theme changed) and listed click-behavior mods for Mac-like clicks.
+
 ## v0.3 Alpha — 2026-07-24
 
 - **Active app** now shows accent glow on **both** a wide underline hairline
