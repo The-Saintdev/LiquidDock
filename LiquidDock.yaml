@@ -29,20 +29,23 @@ styleConstants:
   # TintOpacity low so it stays colour-neutral and bright (iOS),
   # but keep luminosity HIGH so you see glass, not the wallpaper.
   # -> To darken it, change TintColor to a dark hex (e.g. #202028).
-  - Glass=<AcrylicBrush TintColor="#EAEEF7" TintOpacity="0.18" TintLuminosityOpacity="0.72" FallbackColor="#E6E4E9F2" />
+  # -> To go lighter again, raise TintColor toward #EAEEF7 and drop
+  #    TintOpacity to ~0.18.
+  - Glass=<AcrylicBrush TintColor="#24262F" TintOpacity="0.42" TintLuminosityOpacity="0.5" FallbackColor="#D924262F" />
 
-  # A second, slightly denser glass for flyouts/menus that sit over
+  # A second, denser glass for flyouts/menus that sit over
   # busy content and need to stay legible.
-  - GlassDense=<AcrylicBrush TintColor="#E4E9F4" TintOpacity="0.24" TintLuminosityOpacity="0.85" FallbackColor="#F2E4E9F4" />
+  - GlassDense=<AcrylicBrush TintColor="#1B1D26" TintOpacity="0.55" TintLuminosityOpacity="0.62" FallbackColor="#F21B1D26" />
 
   # Specular rim — the liquid glass signature. Bright catch-light
   # on the top edge, faint sides, softer catch-light on the bottom.
   - Specular=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#C8FFFFFF" Offset="0" /><GradientStop Color="#38FFFFFF" Offset="0.4" /><GradientStop Color="#20FFFFFF" Offset="0.75" /><GradientStop Color="#70FFFFFF" Offset="1" /></LinearGradientBrush>
 
-  # Interaction plates (hover / press bubbles inside the glass)
-  - HoverPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.16" />
-  - PressPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.24" />
-  - ActivePlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.10" />
+  # Interaction plates (hover / press bubbles inside the glass).
+  # Brighter now so they read clearly against the darker glass.
+  - HoverPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.22" />
+  - PressPlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.32" />
+  - ActivePlate=<SolidColorBrush Color="#FFFFFF" Opacity="0.14" />
 
   # Active app: a glowing accent border ring around the button.
   - ActiveRing=<LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="{ThemeResource SystemAccentColorLight2}" Offset="0" /><GradientStop Color="{ThemeResource SystemAccentColor}" Offset="1" /></LinearGradientBrush>
@@ -86,8 +89,9 @@ controlStyles:
 
   - target: Taskbar.TaskbarFrame#TaskbarFrame > Grid#RootGrid
     styles:
-      # left margin (12) shifts the whole dock left off the corner
-      - Margin=12,0,0,6
+      # First number = how far from the left edge. Raise it to push
+      # the dock further right, lower it to move left.
+      - Margin=140,0,0,6
       - Background:=$Glass
       - BorderBrush:=$Specular
       - BorderThickness=$BorderThickness
@@ -235,15 +239,21 @@ controlStyles:
       - BorderBrush@ActivePressed:=$ActiveRing
       - BorderThickness@ActivePressed=1.5
 
-  # Icon lift + scale on hover, gentle squish on press
-  - target: Taskbar.TaskListButtonPanel@CommonStates > Windows.UI.Xaml.Controls.Image#Icon
+  # Whole-button LIFT + ZOOM on hover, squish on press.
+  # Scaling the panel itself (not the deep Image element) is what
+  # actually matches at runtime, so the motion is now visible.
+  # RenderTransform doesn't affect layout, so neighbours don't shift.
+  - target: Taskbar.TaskListButtonPanel
     styles:
       - RenderTransformOrigin=0.5,0.5
       - RenderTransform:=<CompositeTransform />
-      - RenderTransform@ActivePointerOver:=<CompositeTransform TranslateY="-2" ScaleX="1.12" ScaleY="1.12" />
-      - RenderTransform@InactivePointerOver:=<CompositeTransform TranslateY="-2" ScaleX="1.12" ScaleY="1.12" />
-      - RenderTransform@ActivePressed:=<CompositeTransform ScaleX="0.94" ScaleY="0.94" />
-      - RenderTransform@InactivePressed:=<CompositeTransform ScaleX="0.94" ScaleY="0.94" />
+
+  - target: Taskbar.TaskListButtonPanel@CommonStates
+    styles:
+      - RenderTransform@ActivePointerOver:=<CompositeTransform TranslateY="-3" ScaleX="1.14" ScaleY="1.14" />
+      - RenderTransform@InactivePointerOver:=<CompositeTransform TranslateY="-3" ScaleX="1.14" ScaleY="1.14" />
+      - RenderTransform@ActivePressed:=<CompositeTransform ScaleX="0.92" ScaleY="0.92" />
+      - RenderTransform@InactivePressed:=<CompositeTransform ScaleX="0.92" ScaleY="0.92" />
 
   # Running indicator: a glowing accent DOT.
   # Active  -> bright round accent dot (paired with the ring above).
