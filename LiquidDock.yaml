@@ -233,27 +233,25 @@ controlStyles:
       # Active app: filled glass plate + glowing accent ring
       - Background@ActiveNormal:=$ActivePlate
       - BorderBrush@ActiveNormal:=$ActiveRing
-      - BorderThickness@ActiveNormal=1.5
+      - BorderThickness@ActiveNormal=2
       - BorderBrush@ActivePointerOver:=$ActiveRing
-      - BorderThickness@ActivePointerOver=1.5
+      - BorderThickness@ActivePointerOver=2
       - BorderBrush@ActivePressed:=$ActiveRing
-      - BorderThickness@ActivePressed=1.5
+      - BorderThickness@ActivePressed=2
 
-  # Whole-button LIFT + ZOOM on hover, squish on press.
-  # Scaling the panel itself (not the deep Image element) is what
-  # actually matches at runtime, so the motion is now visible.
-  # RenderTransform doesn't affect layout, so neighbours don't shift.
-  - target: Taskbar.TaskListButtonPanel
-    styles:
-      - RenderTransformOrigin=0.5,0.5
-      - RenderTransform:=<CompositeTransform />
-
-  - target: Taskbar.TaskListButtonPanel@CommonStates
-    styles:
-      - RenderTransform@ActivePointerOver:=<CompositeTransform TranslateY="-3" ScaleX="1.14" ScaleY="1.14" />
-      - RenderTransform@InactivePointerOver:=<CompositeTransform TranslateY="-3" ScaleX="1.14" ScaleY="1.14" />
-      - RenderTransform@ActivePressed:=<CompositeTransform ScaleX="0.92" ScaleY="0.92" />
-      - RenderTransform@InactivePressed:=<CompositeTransform ScaleX="0.92" ScaleY="0.92" />
+  # NOTE ON HOVER MOTION:
+  # A custom smooth icon zoom/lift is NOT possible from YAML — the
+  # Windows shell owns each task button's RenderTransform and
+  # overwrites ours, and the button template only tweens Background,
+  # not transforms. So hover feedback here is a bright glass-plate
+  # BLOOM (opacity, which DOES tween smoothly). True magnification /
+  # spring lift is a LiquidDock+ (code mod) feature.
+  #
+  # Real, working motion that ships today:
+  #  - open an app  -> icon eases in  (EntranceThemeTransition)
+  #  - close an app -> others slide over (RepositionThemeTransition)
+  #  - hover        -> plate blooms brighter (below)
+  #  - activate     -> accent ring + dot appear
 
   # Running indicator: a glowing accent DOT.
   # Active  -> bright round accent dot (paired with the ring above).
