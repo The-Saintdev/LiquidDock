@@ -92,26 +92,62 @@ document.addEventListener('keydown', (e) => {
   else if (e.target !== search && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) search.focus();
 });
 
-/* ---------------- Photo frames ---------------- */
+/* ---------------- Photos (freely placed, draggable, resizable) ---------------- */
+const photosEl = document.getElementById('photos');
+
+function normalizePhotos() {
+  // Migrate the old ['dataurl', ...] format to objects, drop empties.
+  cfg.photos = (cfg.photos || [])
+    .map((p) => (typeof p === 'string' ? (p ? { src: p, x: 60, y: 60, w: 180, h: 180 } : null) : p))
+    .filter(Boolean);
+}
+async function savePhotos() { cfg = await window.liquid.setConfig({ photos: cfg.photos }); }
+
 function renderPhotos() {
-  document.querySelectorAll('.frame').forEach((frame) => {
-    const i = +frame.dataset.i;
-    const data = cfg.photos[i];
-    frame.innerHTML = '';
-    if (data) {
-      const img = document.createElement('img'); img.src = data; img.alt = '';
-      const clr = document.createElement('button'); clr.className = 'clear'; clr.textContent = '×';
-      clr.addEventListener('click', async (e) => { e.stopPropagation(); const photos = [...cfg.photos]; photos[i] = ''; cfg = await window.liquid.setConfig({ photos }); renderPhotos(); });
-      frame.append(img, clr);
-    } else {
-      const add = document.createElement('span'); add.className = 'add'; add.textContent = '＋'; frame.append(add);
-    }
-    frame.onclick = async () => {
-      const data = await window.liquid.pickImage();
-      if (!data) return;
-      const photos = [...cfg.photos]; photos[i] = data; cfg = await window.liquid.setConfig({ photos }); renderPhotos();
-    };
+  photosEl.innerHTML = '';
+  cfg.photos.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'photo';
+    el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+    el.style.width = p.w + 'px'; el.style.height = p.h + 'px';
+    const img = document.createElement('img'); img.src = p.src; img.alt = '';
+    const del = document.createElement('button'); del.className = 'del'; del.textContent = '×';
+    const rez = document.createElement('div'); rez.className = 'resize';
+    el.append(img, del, rez);
+    photosEl.append(el);
+
+    del.addEventListener('mousedown', (e) => e.stopPropagation());
+    del.addEventListener('click', async (e) => { e.stopPropagation(); cfg.photos.splice(i, 1); await savePhotos(); renderPhotos(); });
+
+    // Drag to move
+    el.addEventListener('mousedown', (e) => {
+      if (e.target === rez || e.target === del) return;
+      e.preventDefault();
+      const ox = e.clientX - p.x, oy = e.clientY - p.y;
+      const move = (ev) => { p.x = Math.max(0, ev.clientX - ox); p.y = Math.max(30, ev.clientY - oy); el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); savePhotos(); };
+      document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+    });
+
+    // Resize from corner
+    rez.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const sx = e.clientX, sy = e.clientY, sw = p.w, sh = p.h;
+      const move = (ev) => { p.w = Math.max(80, sw + ev.clientX - sx); p.h = Math.max(80, sh + ev.clientY - sy); el.style.width = p.w + 'px'; el.style.height = p.h + 'px'; };
+      const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); savePhotos(); };
+      document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+    });
   });
+  const count = document.getElementById('s-photocount');
+  if (count) count.textContent = cfg.photos.length ? `${cfg.photos.length} on desktop` : 'none yet';
+}
+
+async function addPhoto() {
+  const data = await window.liquid.pickImage();
+  if (!data) return;
+  cfg.photos.push({ src: data, x: 80, y: 80, w: 200, h: 200 });
+  await savePhotos();
+  renderPhotos();
 }
 
 /* ---------------- Widgets ---------------- */
@@ -202,6 +238,7 @@ function bindSettings() {
   $('s-mactiles').addEventListener('change', (e) => save({ macTiles: e.target.checked }));
   $('s-clock24').addEventListener('change', (e) => save({ clock24: e.target.checked }));
   for (const w of ['weather', 'system', 'uptime', 'calendar', 'notes', 'photos']) $('s-w-' + w).addEventListener('change', (e) => save({ widgets: { [w]: e.target.checked } }));
+  $('s-addphoto').addEventListener('click', addPhoto);
   $('s-close').addEventListener('click', closeOverlays);
 }
 
@@ -233,6 +270,15 @@ document.getElementById('quit').addEventListener('click', () => window.liquid.qu
 /* ---------------- Boot ---------------- */
 (async function boot() {
   cfg = await window.liquid.getConfig();
+
+  // Background-only window (external monitors): paint just the background.
+  if (new URLSearchParams(location.search).has('bg')) {
+    document.body.classList.add('bgonly');
+    await setBackground();
+    return;
+  }
+
+  normalizePhotos();
   applyConfig();
   renderPhotos();
   bindNotes();

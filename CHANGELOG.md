@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — interactive shell + free photos (2026-07-25)
+
+- **Fixed unresponsive takeover (root cause):** a window parented into the
+  wallpaper/Progman layer is display-only — Windows makes that layer
+  non-interactive, so nothing clicked. Abandoned desktop-pinning. Shell mode is
+  now a normal **interactive** full-screen window on the primary monitor (clicks,
+  right-click, keyboard search all work). Also fixes the small left-edge gap,
+  since Electron places it by display bounds directly.
+- **External monitors:** each non-primary display gets a background-only window
+  (`?bg=1` → `body.bgonly`) showing just the chosen background; kept in sync when
+  settings change.
+- **Photos reworked:** no more 3 fixed add-boxes. Add images from
+  **Settings → Add image…**; each appears on the desktop as a **freely
+  draggable, resizable** rounded photo (position/size saved), removable via its
+  ×. Only shows after you add it. Old photo config auto-migrates.
+
 ## Unreleased — takeover primary-monitor fix + context menu (2026-07-25)
 
 - **Full-screen fix (real cause):** Progman spans ALL monitors with a negative

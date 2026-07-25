@@ -18,6 +18,7 @@ const desktop = require('./win32-desktop.js');
 const isSmoke = process.argv.includes('--smoke');
 const isShell = process.argv.includes('--shell'); // desktop-takeover mode
 let homeWin = null;
+let bgWins = [];
 
 /* ---------------- App enumeration ---------------- */
 const START_DIRS = [
@@ -89,10 +90,11 @@ function createHome() {
     },
   };
   if (isShell) {
-    // Desktop-takeover: opaque full-screen, pinned behind windows.
+    // Desktop-takeover: full-screen INTERACTIVE window on the primary monitor.
+    // (Not parented to the wallpaper layer — that layer is non-interactive.)
     const b = screen.getPrimaryDisplay().bounds;
     homeWin = new BrowserWindow({ ...base, x: b.x, y: b.y, width: b.width, height: b.height,
-      resizable: false, movable: false, skipTaskbar: true, focusable: true });
+      resizable: false, movable: false, skipTaskbar: true, alwaysOnTop: false });
   } else {
     homeWin = new BrowserWindow({ ...base, width: 1280, height: 820, minWidth: 940, minHeight: 640 });
   }
@@ -101,17 +103,28 @@ function createHome() {
   if (isSmoke) q.push('smoke=1');
   if (isShell) q.push('shell=1');
   homeWin.loadFile(path.join(__dirname, 'home', 'index.html'), { search: q.join('&') });
+  homeWin.once('ready-to-show', () => { if (!isSmoke) homeWin.show(); });
 
-  homeWin.once('ready-to-show', () => {
-    if (isSmoke) return;
-    homeWin.show();
-    if (isShell) {
-      try {
-        const hwnd = homeWin.getNativeWindowHandle().readBigUInt64LE();
-        console.log('[shell] pin:', JSON.stringify(desktop.pinToDesktop(hwnd)));
-      } catch (e) { console.log('[shell] pin failed:', e); }
-    }
-  });
+  if (isShell && !isSmoke) createBackgroundWindows();
+}
+
+// Cover every OTHER monitor with just the chosen background.
+function createBackgroundWindows() {
+  const primaryId = screen.getPrimaryDisplay().id;
+  for (const d of screen.getAllDisplays()) {
+    if (d.id === primaryId) continue;
+    const b = d.bounds;
+    const w = new BrowserWindow({
+      x: b.x, y: b.y, width: b.width, height: b.height,
+      frame: false, skipTaskbar: true, focusable: false, resizable: false, movable: false,
+      backgroundColor: '#0e1018', show: false,
+      webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
+    });
+    w.loadFile(path.join(__dirname, 'home', 'index.html'), { search: 'bg=1' });
+    w.setIgnoreMouseEvents(true, { forward: true });
+    w.once('ready-to-show', () => w.showInactive());
+    bgWins.push(w);
+  }
 }
 
 /* ---------------- Lifecycle ---------------- */
@@ -180,7 +193,7 @@ const CONFIG_DEFAULTS = {
   macTiles: true,               // squircle tiles behind icons
   clock24: false,
   notes: '',                     // sticky-note widget text
-  photos: ['', '', ''],          // photo-frame data URLs
+  photos: [],                    // [{ src, x, y, w, h }] freely-placed photos
   widgets: { weather: true, system: true, calendar: true, uptime: true, notes: true, photos: true },
 };
 function configPath() { return path.join(app.getPath('userData'), 'liquidhome-config.json'); }
@@ -194,6 +207,8 @@ ipcMain.handle('get-config', () => loadConfig());
 ipcMain.handle('set-config', (_e, c) => {
   const merged = { ...loadConfig(), ...c, widgets: { ...loadConfig().widgets, ...(c.widgets || {}) } };
   try { fs.writeFileSync(configPath(), JSON.stringify(merged, null, 2)); } catch {}
+  // Keep the external-monitor background windows in sync.
+  bgWins.forEach((w) => { if (!w.isDestroyed()) w.reload(); });
   return merged;
 });
 

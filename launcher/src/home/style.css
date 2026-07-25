@@ -42,20 +42,23 @@ body.shell #dev-controls { display: none; }
 /* ---- Desktop ---- */
 #desktop { position: absolute; inset: 30px 0 0 0; z-index: 2; }
 
-#photos { position: absolute; top: 40px; left: 40px; display: flex; gap: 16px; }
-.frame {
-  width: 132px; height: 132px; border-radius: 22px; overflow: hidden; cursor: pointer;
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.2);
-  display: flex; align-items: center; justify-content: center; position: relative;
-  transition: transform 0.16s ease;
-}
-.frame:hover { transform: translateY(-3px) scale(1.03); }
-.frame img { width: 100%; height: 100%; object-fit: cover; }
-.frame .add { font-size: 32px; color: rgba(255,255,255,0.35); font-weight: 200; }
-.frame .clear { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: 0; font-size: 13px; cursor: pointer; display: none; align-items: center; justify-content: center; }
-.frame:hover .clear { display: flex; }
+/* Freely-placed, draggable, resizable photo widgets */
+#photos { position: absolute; inset: 0; pointer-events: none; }
 #photos.hidden { display: none; }
+.photo {
+  position: absolute; pointer-events: auto; border-radius: 20px; overflow: hidden; cursor: grab;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.photo:active { cursor: grabbing; }
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; -webkit-user-drag: none; }
+.photo .del { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; border: 0; font-size: 13px; cursor: pointer; display: none; align-items: center; justify-content: center; }
+.photo:hover .del { display: flex; }
+.photo .resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.5) 50%); border-bottom-right-radius: 20px; display: none; }
+.photo:hover .resize { display: block; }
+
+/* Background-only window (external monitors) */
+body.bgonly #menubar, body.bgonly #desktop, body.bgonly .overlay, body.bgonly #ctxmenu { display: none !important; }
 
 #widgets { position: absolute; top: 40px; right: 34px; width: 280px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 90px); overflow-y: auto; scrollbar-width: none; }
 #widgets::-webkit-scrollbar { display: none; }

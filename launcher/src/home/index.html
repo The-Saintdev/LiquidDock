@@ -30,12 +30,8 @@
 
   <!-- Desktop -->
   <div id="desktop">
-    <!-- Photo frames (add your own images) -->
-    <div id="photos">
-      <div class="frame" data-i="0"><span class="add">＋</span></div>
-      <div class="frame" data-i="1"><span class="add">＋</span></div>
-      <div class="frame" data-i="2"><span class="add">＋</span></div>
-    </div>
+    <!-- Freely-placed photos (added from Settings; drag to move, corner to resize) -->
+    <div id="photos"></div>
 
     <!-- Widgets -->
     <div id="widgets">
@@ -112,6 +108,9 @@
           <label><input id="s-w-notes" type="checkbox" /> Notes</label>
           <label><input id="s-w-photos" type="checkbox" /> Photos</label>
         </span>
+      </div>
+      <div class="row"><label>Photos on desktop</label>
+        <span><button id="s-addphoto" class="btn">Add image…</button> <span id="s-photocount" class="val"></span></span>
       </div>
       <div class="actions"><button id="s-close" class="btn">Done</button></div>
       <p class="hint">Settings save automatically · Esc closes overlays · Ctrl+Alt+Q quits</p>
