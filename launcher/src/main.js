@@ -1,9 +1,9 @@
 // LiquidHome — main process.
 // A custom home shell (HiOS/XOS-style) for Windows 11.
 //
-// SAFE DEV MODE: runs as a normal, closable window — it never pins to the
-// desktop or covers your screen. Once the design is locked, a later build adds
-// an opt-in "desktop takeover" mode (src/win32-desktop.js is kept for that).
+// Windowed mode (--windowed / dev): a normal, closable window.
+// Shell mode (--shell / packaged): full-screen interactive launcher on the
+// primary monitor. No native modules — pure Electron.
 //
 // Cloudex Labs — MIT.
 
@@ -13,7 +13,6 @@ const fs = require('fs');
 const os = require('os');
 const https = require('https');
 const { exec } = require('child_process');
-const desktop = require('./win32-desktop.js');
 
 const isSmoke = process.argv.includes('--smoke');
 // The installed app IS the launcher: default to takeover mode when packaged.
@@ -42,7 +41,7 @@ function walk(dir, out) {
 // after the app (e.g. "Google Chrome.png"). Matched case/space-insensitively;
 // used in place of the extracted Windows icon. Lets any mac icon pack be applied
 // without touching code.
-const ICON_DIR = path.join(__dirname, '..', 'icons');
+const ICON_DIR = path.join(__dirname, '..', 'iconpack');
 const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
 const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
 let iconMap = null;

@@ -7,37 +7,12 @@
     "start": "electron . --windowed",
     "shell": "electron . --shell",
     "smoke": "electron . --smoke",
-    "dist": "electron-builder"
+    "pack": "electron-packager . LiquidHome --platform=win32 --arch=x64 --out=dist --overwrite --prune=true"
   },
   "author": "Cloudex Labs",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^43.2.0",
-    "electron-builder": "^25.1.8"
-  },
-  "dependencies": {
-    "koffi": "^3.1.2"
-  },
-  "build": {
-    "appId": "com.cloudexlabs.liquidhome",
-    "productName": "LiquidHome",
-    "files": [
-      "src/**/*",
-      "icons/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/koffi/**/*"
-    ],
-    "win": {
-      "target": [
-        { "target": "nsis", "arch": ["x64"] }
-      ]
-    },
-    "nsis": {
-      "oneClick": true,
-      "perMachine": false,
-      "createDesktopShortcut": true,
-      "runAfterFinish": false
-    }
+    "@electron/packager": "^20.0.4",
+    "electron": "^43.2.0"
   }
 }

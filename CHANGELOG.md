@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — packaged .exe + boot (2026-07-25)
+
+- **Standalone build:** `npm run pack` (@electron/packager) produces
+  `dist/LiquidHome-win32-x64/LiquidHome.exe` — a real double-clickable app.
+  Verified it launches. (electron-builder was dropped — its code-signing helper
+  needs macOS symlink extraction that Windows blocks without admin/Dev Mode.)
+- **Packaged app = takeover by default:** `isShell` is true when packaged unless
+  `--windowed` is passed, so the exe *is* the launcher.
+- **Launch on boot:** Settings → "Launch on Windows startup" toggle
+  (`app.setLoginItemSettings`).
+- **Removed koffi + win32-desktop.js/win32-debug.js entirely** — the Progman
+  pinning they powered was abandoned, so there are now **no native modules**,
+  which makes packaging trivial and robust.
+- Renamed the icon-override folder `icons/` → `iconpack/` (electron-builder had
+  mistaken `icons/` for the app-icon directory).
+- Added global renderer error capture in home.js.
+
 ## Unreleased — interactive shell + free photos (2026-07-25)
 
 - **Fixed unresponsive takeover (root cause):** a window parented into the

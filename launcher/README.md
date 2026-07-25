@@ -1,82 +1,84 @@
-# LiquidLaunch + LiquidBoard
+# LiquidHome
 
-A macOS-style desktop for Windows 11, in two layers that sit around LiquidDock
-(your taskbar stays exactly as it is):
+A macOS-style **desktop shell / launcher** for Windows 11 — a custom home with a
+menu bar, widgets, freely-placed photos, a Launchpad app menu, gradients/custom
+wallpaper, and a real full-screen takeover. Built on Electron. No native modules.
 
-1. **LiquidBoard** — glass **widgets pinned to the desktop wallpaper**, behind
-   your windows (like macOS desktop widgets). Always visible, click-through.
-2. **LiquidLaunch** — a **Launchpad** app grid you summon from the **top-left
-   hot corner** (slam the mouse into the corner) or `Ctrl+Alt+Space`.
+**Cloudex Labs — MIT**
 
-**v0.3 Alpha — Cloudex Labs**
-
-## Run it
+## Two ways to run
 
 ```powershell
 cd launcher
-npm install      # first time only (downloads Electron)
-npm start
+npm install          # first time only
+npm start            # WINDOWED dev mode (normal closable window)
+npm run shell        # TAKEOVER mode (full-screen launcher on the primary monitor)
 ```
 
-For a real, window-less background run, launch `start-liquidlaunch.vbs` instead
-(pin it or add it to `shell:startup`). Boot-on-login + a packaged `.exe` are the
-next milestone.
+- **Ctrl+Alt+Space** — bring the home forward
+- **Ctrl+Alt+Q** — quit (always works)
+- Menu-bar **◱** — open Launchpad · **⚙** — Settings
+- **Right-click** the desktop — Refresh, New Folder, Display Settings, etc.
 
-### Controls
-
-- **Top-left corner** (or **Ctrl+Alt+Space**) — open the app launcher
-- **Type** — filter apps · **Enter** — launch top match
-- **← / →** or **scroll** — flip Launchpad pages
-- **Esc** or click empty space — dismiss the launcher
-- **Ctrl+Alt+Q** — quit everything
-
-### Clear the desktop (recommended, for the full effect)
-
-The widgets are meant to be the *only* thing on your desktop:
+## Build a standalone .exe
 
 ```powershell
-# from the repo root
-powershell -ExecutionPolicy Bypass -File clear-desktop.ps1 -Hide
+cd launcher
+npm run pack         # -> dist/LiquidHome-win32-x64/LiquidHome.exe
 ```
 
-## Widgets on the board
+`npm run pack` uses @electron/packager (no signing, no admin needed). The
+resulting `LiquidHome.exe` **defaults to takeover mode** — double-click it and it
+becomes your full-screen launcher. Pass `--windowed` to open it as a normal
+window instead.
 
-Clock, Weather (IP-located via open-meteo), System (CPU / memory / battery),
-and a month Calendar — glass cards stacked in the top-right of the desktop.
+> Move the whole `LiquidHome-win32-x64` folder somewhere stable (e.g.
+> `C:\Users\<you>\LiquidHome\`) before setting it to run on boot, so the startup
+> path doesn't break.
 
-## How the desktop pinning works
+## Run on boot
 
-Windows hosts the desktop icons in a `SHELLDLL_DefView` window. On this build
-(Win11 26200) that lives under **Progman**, so `src/win32-desktop.js` uses
-[koffi](https://koffi.dev) (a prebuilt FFI — no compiler needed) to call the
-Win32 `SetParent` and re-parent the board window into Progman. That makes it
-render on the desktop, beneath normal app windows. The board is transparent and
-click-through, so only the cards paint and the desktop stays fully usable.
+Open **Settings (⚙) → "Launch on Windows startup"** and toggle it on. That
+registers the current `LiquidHome.exe` to start with Windows (in takeover mode).
+Toggle it off to remove it. (Ctrl+Alt+Q always quits a running instance.)
 
-> `node src/win32-debug.js` dumps the live desktop window tree if pinning ever
-> misbehaves after a Windows update.
+## Settings (no code edits)
+
+Background (6 gradients / Windows wallpaper / **custom image**), app icon size,
+Launchpad columns, mac icon tiles, 24-h clock, per-widget show/hide, add desktop
+**photos** (drag to move, corner to resize), and launch-on-boot.
+
+## Widgets
+
+Clock, Weather (open-meteo, IP-located), System (CPU/mem/battery), Uptime,
+Calendar, Notes (saved), and freely-placed Photos.
+
+## How takeover works (and its one honest limit)
+
+The shell is a normal, **interactive** full-screen window on the primary monitor
+— clicks, right-click, and keyboard search all work. It is deliberately **not**
+pinned into the Windows wallpaper layer: that layer is display-only, so a pinned
+window can't be clicked (an earlier approach; removed). The trade-off: the home
+doesn't stay behind your apps automatically like a live wallpaper — it's the home
+you return to (Ctrl+Alt+Space), the way macOS Launchpad works. Apps, the taskbar
+(LiquidDock), and your password manager all work normally on top of it.
+
+The window is sized 1px short of the monitor so Windows keeps the taskbar visible
+over it. External monitors are left as normal Windows.
 
 ## Architecture
 
 ```
 src/
-  main.js          orchestrates both windows + hot corner + desktop pin
-  win32-desktop.js  koffi Progman/WorkerW pinning
-  preload.js        context-isolated bridge (getApps/launch/getSystem/getWeather)
-  renderer/         LiquidLaunch — the app grid overlay (acrylic)
-  board/            LiquidBoard  — the desktop widgets (transparent, pinned)
+  main.js       window(s), app enumeration, config, IPC, boot toggle, right-click actions
+  preload.js    context-isolated bridge
+  home/         the shell UI (index.html / style.css / home.js)
+iconpack/        optional PNGs named after apps to override icons (you skipped this)
 ```
 
 ## Roadmap
 
-- **Next: package to a standalone `.exe`** (electron-builder) + run at login +
-  wire the launcher to the Start button
-- Drag-to-reorder + folders in the launcher
-- More widgets + draggable widget layout on the board
-- Per-monitor board
-
-## Self-test
-
-`electron . --smoke` boots both windows headless (renderer + board + icon
-pipeline + desktop-pin probe), writes `smoke-result.json`, and quits — verifies
-changes without popping any window.
+- Drag-to-reorder + folders in Launchpad
+- Bind the Start button / a hot corner to bring the home forward
+- More widgets (media, quick toggles)
+- Signed installer (needs a code-signing cert)
