@@ -205,6 +205,27 @@ function bindSettings() {
   $('s-close').addEventListener('click', closeOverlays);
 }
 
+/* ---------------- Right-click context menu ---------------- */
+const ctx = document.getElementById('ctxmenu');
+document.addEventListener('contextmenu', (e) => {
+  if (!launchpad.classList.contains('hidden') || !settings.classList.contains('hidden')) return;
+  if (e.target.closest('.card') || e.target.closest('#menubar')) return; // let widgets behave normally
+  e.preventDefault();
+  ctx.classList.remove('hidden');
+  const w = ctx.offsetWidth, h = ctx.offsetHeight;
+  ctx.style.left = Math.min(e.clientX, window.innerWidth - w - 8) + 'px';
+  ctx.style.top = Math.min(e.clientY, window.innerHeight - h - 8) + 'px';
+});
+document.addEventListener('mousedown', (e) => { if (!e.target.closest('#ctxmenu')) ctx.classList.add('hidden'); });
+ctx.addEventListener('click', (e) => {
+  const a = e.target.dataset.a;
+  if (!a) return;
+  ctx.classList.add('hidden');
+  if (a === 'refresh') location.reload();
+  else if (a === 'wallpaper') openSettings();
+  else window.liquid.desktopAction(a);
+});
+
 /* ---------------- Window controls (dev only) ---------------- */
 document.getElementById('min').addEventListener('click', () => window.liquid.minimize());
 document.getElementById('quit').addEventListener('click', () => window.liquid.quit());

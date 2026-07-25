@@ -14,4 +14,5 @@ contextBridge.exposeInMainWorld('liquid', {
   pickImage: () => ipcRenderer.invoke('pick-image'),
   minimize: () => ipcRenderer.send('minimize'),
   quit: () => ipcRenderer.send('quit'),
+  desktopAction: (a) => ipcRenderer.send('desktop-action', a),
 });

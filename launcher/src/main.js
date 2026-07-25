@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const https = require('https');
+const { exec } = require('child_process');
 const desktop = require('./win32-desktop.js');
 
 const isSmoke = process.argv.includes('--smoke');
@@ -143,6 +144,24 @@ ipcMain.handle('get-apps', () => enumerateApps());
 ipcMain.on('launch', (_e, p) => shell.openPath(p));
 ipcMain.on('minimize', () => { if (homeWin) homeWin.minimize(); });
 ipcMain.on('quit', () => app.quit());
+
+// Desktop right-click actions (our own menu, real Windows actions).
+ipcMain.on('desktop-action', (_e, action) => {
+  try {
+    if (action === 'display') shell.openExternal('ms-settings:display');
+    else if (action === 'personalize') shell.openExternal('ms-settings:personalization');
+    else if (action === 'taskmgr') exec('taskmgr');
+    else if (action === 'terminal') exec('start wt', { shell: 'cmd.exe' }, (err) => { if (err) exec('start cmd', { shell: 'cmd.exe' }); });
+    else if (action === 'explorer') exec('explorer ' + path.join(os.homedir(), 'Desktop'));
+    else if (action === 'newfolder') {
+      const dp = path.join(os.homedir(), 'Desktop');
+      let name = 'New folder', i = 1, target = path.join(dp, name);
+      while (fs.existsSync(target)) { name = `New folder (${i++})`; target = path.join(dp, name); }
+      fs.mkdirSync(target);
+      exec('explorer ' + dp);
+    }
+  } catch {}
+});
 
 ipcMain.handle('get-wallpaper', () => {
   try {

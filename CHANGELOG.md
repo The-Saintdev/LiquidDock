@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — takeover primary-monitor fix + context menu (2026-07-25)
+
+- **Full-screen fix (real cause):** Progman spans ALL monitors with a negative
+  origin (external monitor to the left at x=-1067). Filling its whole client
+  landed the shell across both screens ("shifted to one side"). Now
+  `pinToDesktop` places the window over the **primary monitor** — screen (0,0)
+  sized `SM_CXSCREEN×SM_CYSCREEN`, converted into Progman-client coords via
+  `GetWindowRect`. (koffi: added GetWindowRect, GetSystemMetrics.)
+- **Custom desktop right-click menu:** since the opaque takeover covers the
+  native desktop, added our own mac-style context menu — Refresh, New Folder,
+  Open Desktop Folder, Change Wallpaper, Display Settings, Personalize, Terminal,
+  Task Manager — wired to real Windows actions (`ms-settings:`, explorer, etc.).
+
 ## Unreleased — takeover fill/raise + custom wallpaper (2026-07-25)
 
 - **Takeover now fills the whole desktop:** after `SetParent` into Progman,

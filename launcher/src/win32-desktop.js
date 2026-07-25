@@ -18,6 +18,8 @@ const SetWindowPos = user32.func('SetWindowPos', 'bool', ['uintptr_t', 'uintptr_
 
 const RECT = koffi.struct('RECT', { left: 'int', top: 'int', right: 'int', bottom: 'int' });
 const GetClientRect = user32.func('GetClientRect', 'bool', ['uintptr_t', koffi.out(koffi.pointer(RECT))]);
+const GetWindowRect = user32.func('GetWindowRect', 'bool', ['uintptr_t', koffi.out(koffi.pointer(RECT))]);
+const GetSystemMetrics = user32.func('GetSystemMetrics', 'int', ['int']);
 
 const EnumWindowsProc = koffi.proto('bool EnumWindowsProc(uintptr_t hwnd, intptr_t lParam)');
 const EnumWindows = user32.func('EnumWindows', 'bool', [koffi.pointer(EnumWindowsProc), 'intptr_t']);
@@ -67,19 +69,21 @@ function pinToDesktop(hwnd) {
   const { parent, kind } = desktopParent();
   const res = SetParent(h, parent);
 
-  // Fill the parent's (desktop's) full client area — fixes the "stuck in a
-  // corner" DPI/multi-monitor sizing, since we use the real desktop pixels.
-  let w = 0, h2 = 0;
-  const rect = {};
-  if (GetClientRect(parent, rect)) {
-    w = rect.right - rect.left; h2 = rect.bottom - rect.top;
-    if (w > 0 && h2 > 0) MoveWindow(h, 0, 0, w, h2, true);
-  }
+  // Progman can span ALL monitors and its origin can be negative (a monitor to
+  // the left). The primary monitor is always at screen (0,0). Convert that to
+  // Progman-client coordinates so we land exactly on the primary screen.
+  const pr = {};
+  const w = GetSystemMetrics(0);  // SM_CXSCREEN (primary width)
+  const hh = GetSystemMetrics(1); // SM_CYSCREEN (primary height)
+  let x = 0, y = 0;
+  if (GetWindowRect(parent, pr)) { x = 0 - pr.left; y = 0 - pr.top; }
+  if (w > 0 && hh > 0) MoveWindow(h, x, y, w, hh, true);
+
   // Raise above SHELLDLL_DefView (the icons) so our home covers them.
   // HWND_TOP = 0 ; SWP_NOMOVE|SWP_NOSIZE = 0x0002|0x0001
   SetWindowPos(h, 0, 0, 0, 0, 0, 0x0003);
 
-  return { parent: hex(parent), kind, filled: `${w}x${h2}`, setParentResult: hex(res), ok: !isNull(res) };
+  return { parent: hex(parent), kind, placed: `${x},${y} ${w}x${hh}`, setParentResult: hex(res), ok: !isNull(res) };
 }
 
 module.exports = { probe, pinToDesktop, desktopParent };
