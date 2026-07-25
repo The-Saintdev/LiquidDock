@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — LiquidHome macOS shell (2026-07-25)
+
+- **macOS layout:** added a top **menu bar** (logo, Launchpad, weather/battery/
+  clock status, ⚙ settings). Apps moved off the desktop into a **Launchpad**
+  overlay (the mac "app menu"), opened from the menu bar; blurred backdrop, live
+  search, paged grid. Desktop now shows only widgets.
+- **Smaller icons** + optional **macOS squircle tiles** behind each icon.
+- **Settings page** (no code edits): background (designed/wallpaper), icon size,
+  Launchpad columns, mac tiles on/off, 24-h clock, per-widget show/hide —
+  persisted to `liquidhome-config.json` in userData.
+- **Icon-pack override:** `launcher/icons/` — drop PNG/SVG/ICO named after an app
+  to replace its icon (case/space-insensitive). Applies any mac icon pack with
+  no code changes; unmatched apps keep their real icon.
+- **Dev-only window controls:** minimize/quit live in the menu bar behind a
+  `dev` flag and are hidden in shell mode (`body.shell`) — they won't exist once
+  it's the real desktop launcher.
+
 ## Unreleased — LiquidHome pivot (2026-07-25)
 
 Reframed from "launcher + pinned widgets" into a single **custom home shell**

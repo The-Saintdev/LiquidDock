@@ -32,7 +32,33 @@ function walk(dir, out) {
     else if (e.isFile() && e.name.toLowerCase().endsWith('.lnk')) out.push(full);
   }
 }
+// Optional macOS icon pack: drop PNG/ICO/SVG files into launcher/icons named
+// after the app (e.g. "Google Chrome.png"). Matched case/space-insensitively;
+// used in place of the extracted Windows icon. Lets any mac icon pack be applied
+// without touching code.
+const ICON_DIR = path.join(__dirname, '..', 'icons');
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.svg': 'image/svg+xml' };
+let iconMap = null;
+function buildIconMap() {
+  iconMap = new Map();
+  try {
+    for (const f of fs.readdirSync(ICON_DIR)) {
+      const ext = path.extname(f).toLowerCase();
+      if (MIME[ext]) iconMap.set(norm(path.basename(f, ext)), path.join(ICON_DIR, f));
+    }
+  } catch {}
+}
+function customIcon(name) {
+  if (!iconMap) buildIconMap();
+  const f = iconMap.get(norm(name));
+  if (!f) return '';
+  try { return `data:${MIME[path.extname(f).toLowerCase()]};base64,` + fs.readFileSync(f).toString('base64'); }
+  catch { return ''; }
+}
+
 async function enumerateApps() {
+  buildIconMap();
   const lnks = [];
   for (const d of START_DIRS) walk(d, lnks);
   const seen = new Set();
@@ -42,8 +68,8 @@ async function enumerateApps() {
     const key = name.toLowerCase();
     if (seen.has(key) || SKIP.test(name)) continue;
     seen.add(key);
-    let icon = '';
-    try { icon = (await app.getFileIcon(lnk, { size: 'large' })).toDataURL(); } catch {}
+    let icon = customIcon(name);
+    if (!icon) { try { icon = (await app.getFileIcon(lnk, { size: 'large' })).toDataURL(); } catch {} }
     apps.push({ name, path: lnk, icon });
   }
   apps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
@@ -101,6 +127,29 @@ ipcMain.handle('get-wallpaper', () => {
     const p = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Themes', 'TranscodedWallpaper');
     return 'data:image/jpeg;base64,' + fs.readFileSync(p).toString('base64');
   } catch { return null; }
+});
+
+/* ---- Persisted settings (so nothing needs code edits) ---- */
+const CONFIG_DEFAULTS = {
+  background: 'designed',        // 'designed' | 'wallpaper'
+  iconSize: 44,                  // px — smaller by default
+  columns: 7,                    // Launchpad columns
+  macTiles: true,               // squircle tiles behind icons
+  clock24: false,
+  widgets: { weather: true, system: true, calendar: true },
+};
+function configPath() { return path.join(app.getPath('userData'), 'liquidhome-config.json'); }
+function loadConfig() {
+  try {
+    const c = JSON.parse(fs.readFileSync(configPath(), 'utf8'));
+    return { ...CONFIG_DEFAULTS, ...c, widgets: { ...CONFIG_DEFAULTS.widgets, ...(c.widgets || {}) } };
+  } catch { return { ...CONFIG_DEFAULTS }; }
+}
+ipcMain.handle('get-config', () => loadConfig());
+ipcMain.handle('set-config', (_e, c) => {
+  const merged = { ...loadConfig(), ...c, widgets: { ...loadConfig().widgets, ...(c.widgets || {}) } };
+  try { fs.writeFileSync(configPath(), JSON.stringify(merged, null, 2)); } catch {}
+  return merged;
 });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

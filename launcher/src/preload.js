@@ -2,11 +2,15 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('liquid', {
+  // true while running as a normal dev window; false once it's the desktop shell.
+  dev: !process.argv.includes('--shell'),
   getApps: () => ipcRenderer.invoke('get-apps'),
   launch: (p) => ipcRenderer.send('launch', p),
   getSystem: () => ipcRenderer.invoke('get-system'),
   getWeather: () => ipcRenderer.invoke('get-weather'),
   getWallpaper: () => ipcRenderer.invoke('get-wallpaper'),
+  getConfig: () => ipcRenderer.invoke('get-config'),
+  setConfig: (c) => ipcRenderer.invoke('set-config', c),
   minimize: () => ipcRenderer.send('minimize'),
   quit: () => ipcRenderer.send('quit'),
 });
