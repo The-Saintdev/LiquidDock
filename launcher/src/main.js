@@ -153,8 +153,9 @@ ipcMain.handle('get-wallpaper', () => {
 
 /* ---- Persisted settings (so nothing needs code edits) ---- */
 const CONFIG_DEFAULTS = {
-  background: 'designed',        // 'designed' | 'wallpaper'
+  background: 'designed',        // 'designed' | 'wallpaper' | 'custom'
   gradient: 'aurora',           // preset used when background === 'designed'
+  customWallpaper: '',           // data URL used when background === 'custom'
   iconSize: 44,                  // px — smaller by default
   columns: 7,                    // Launchpad columns
   macTiles: true,               // squircle tiles behind icons

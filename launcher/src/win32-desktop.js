@@ -13,6 +13,11 @@ const FindWindowEx = user32.func('FindWindowExW', 'uintptr_t', ['uintptr_t', 'ui
 const SendMessageTimeout = user32.func('SendMessageTimeoutW', 'intptr_t',
   ['uintptr_t', 'uint', 'uintptr_t', 'intptr_t', 'uint', 'uint', 'uintptr_t']);
 const SetParent = user32.func('SetParent', 'uintptr_t', ['uintptr_t', 'uintptr_t']);
+const MoveWindow = user32.func('MoveWindow', 'bool', ['uintptr_t', 'int', 'int', 'int', 'int', 'bool']);
+const SetWindowPos = user32.func('SetWindowPos', 'bool', ['uintptr_t', 'uintptr_t', 'int', 'int', 'int', 'int', 'uint']);
+
+const RECT = koffi.struct('RECT', { left: 'int', top: 'int', right: 'int', bottom: 'int' });
+const GetClientRect = user32.func('GetClientRect', 'bool', ['uintptr_t', koffi.out(koffi.pointer(RECT))]);
 
 const EnumWindowsProc = koffi.proto('bool EnumWindowsProc(uintptr_t hwnd, intptr_t lParam)');
 const EnumWindows = user32.func('EnumWindows', 'bool', [koffi.pointer(EnumWindowsProc), 'intptr_t']);
@@ -55,11 +60,26 @@ function probe() {
   return { progman: hex(progman), parent: hex(parent), kind, ok: !isNull(parent) };
 }
 
-// Pin the given HWND (BigInt) into the desktop layer.
+// Pin the given HWND (BigInt) into the desktop layer, fill the whole desktop,
+// and raise it above the desktop icons so it's a real takeover.
 function pinToDesktop(hwnd) {
+  const h = BigInt(hwnd);
   const { parent, kind } = desktopParent();
-  const res = SetParent(BigInt(hwnd), parent);
-  return { parent: hex(parent), kind, setParentResult: hex(res), ok: !isNull(res) };
+  const res = SetParent(h, parent);
+
+  // Fill the parent's (desktop's) full client area — fixes the "stuck in a
+  // corner" DPI/multi-monitor sizing, since we use the real desktop pixels.
+  let w = 0, h2 = 0;
+  const rect = {};
+  if (GetClientRect(parent, rect)) {
+    w = rect.right - rect.left; h2 = rect.bottom - rect.top;
+    if (w > 0 && h2 > 0) MoveWindow(h, 0, 0, w, h2, true);
+  }
+  // Raise above SHELLDLL_DefView (the icons) so our home covers them.
+  // HWND_TOP = 0 ; SWP_NOMOVE|SWP_NOSIZE = 0x0002|0x0001
+  SetWindowPos(h, 0, 0, 0, 0, 0, 0x0003);
+
+  return { parent: hex(parent), kind, filled: `${w}x${h2}`, setParentResult: hex(res), ok: !isNull(res) };
 }
 
 module.exports = { probe, pinToDesktop, desktopParent };

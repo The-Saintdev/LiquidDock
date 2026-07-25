@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — takeover fill/raise + custom wallpaper (2026-07-25)
+
+- **Takeover now fills the whole desktop:** after `SetParent` into Progman,
+  `pinToDesktop` reads Progman's client rect and `MoveWindow`s the shell to the
+  real desktop pixels (fixes the dual-monitor/DPI "stuck in a corner" bug), then
+  `SetWindowPos(HWND_TOP)` raises it above `SHELLDLL_DefView` so it covers the
+  desktop icons — a real takeover. (koffi: added MoveWindow, SetWindowPos,
+  GetClientRect + RECT struct.)
+- **Custom wallpaper:** Settings → Background → "Custom image…" lets you pick any
+  image as the shell wallpaper (saved in config). Works alongside designed
+  gradients and the Windows-wallpaper option.
+
 ## Unreleased — LiquidHome widgets + gradients + takeover mode (2026-07-25)
 
 - **New widgets:** Uptime, editable **Notes** (persisted), and **Photo frames**

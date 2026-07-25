@@ -78,8 +78,13 @@
     <div class="panel">
       <h2>Settings</h2>
       <div class="row"><label>Background</label>
-        <select id="s-bg"><option value="designed">Designed gradient</option><option value="wallpaper">My Windows wallpaper</option></select>
+        <select id="s-bg">
+          <option value="designed">Designed gradient</option>
+          <option value="wallpaper">My Windows wallpaper</option>
+          <option value="custom">Custom image…</option>
+        </select>
       </div>
+      <div class="row" id="row-custom"><label>Custom wallpaper</label><button id="s-pickwall" class="btn">Choose image…</button></div>
       <div class="row" id="row-gradient"><label>Gradient</label>
         <select id="s-gradient">
           <option value="aurora">Aurora</option>

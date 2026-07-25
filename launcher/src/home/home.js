@@ -15,8 +15,8 @@ const settings = document.getElementById('settings');
 /* ---------------- Config / appearance ---------------- */
 async function setBackground() {
   document.body.classList.remove('wallpaper', ...GRADS.map((g) => 'grad-' + g));
-  if (cfg.background === 'wallpaper') {
-    const data = await window.liquid.getWallpaper();
+  if (cfg.background === 'wallpaper' || cfg.background === 'custom') {
+    const data = cfg.background === 'custom' ? cfg.customWallpaper : await window.liquid.getWallpaper();
     if (data) { root.style.setProperty('--wallpaper', `url("${data}")`); document.body.classList.add('wallpaper'); return; }
   }
   document.body.classList.add('grad-' + (GRADS.includes(cfg.gradient) ? cfg.gradient : 'aurora'));
@@ -176,6 +176,7 @@ function bindSettings() {
     $('s-bg').value = cfg.background;
     $('s-gradient').value = cfg.gradient;
     document.getElementById('row-gradient').style.display = cfg.background === 'designed' ? '' : 'none';
+    document.getElementById('row-custom').style.display = cfg.background === 'custom' ? '' : 'none';
     $('s-iconsize').value = cfg.iconSize; $('s-iconsize-val').textContent = cfg.iconSize + 'px';
     $('s-cols').value = cfg.columns; $('s-cols-val').textContent = cfg.columns;
     $('s-mactiles').checked = cfg.macTiles; $('s-clock24').checked = cfg.clock24;
@@ -183,8 +184,19 @@ function bindSettings() {
   };
   async function save(patch) { cfg = await window.liquid.setConfig(patch); applyConfig(); renderPhotos(); sync(); }
   sync();
-  $('s-bg').addEventListener('change', (e) => save({ background: e.target.value }));
+  $('s-bg').addEventListener('change', async (e) => {
+    if (e.target.value === 'custom' && !cfg.customWallpaper) {
+      const data = await window.liquid.pickImage();
+      if (data) return save({ background: 'custom', customWallpaper: data });
+      return sync(); // cancelled — revert dropdown
+    }
+    save({ background: e.target.value });
+  });
   $('s-gradient').addEventListener('change', (e) => save({ gradient: e.target.value }));
+  $('s-pickwall').addEventListener('click', async () => {
+    const data = await window.liquid.pickImage();
+    if (data) save({ background: 'custom', customWallpaper: data });
+  });
   $('s-iconsize').addEventListener('input', (e) => { $('s-iconsize-val').textContent = e.target.value + 'px'; save({ iconSize: +e.target.value }); });
   $('s-cols').addEventListener('input', (e) => { $('s-cols-val').textContent = e.target.value; save({ columns: +e.target.value }); });
   $('s-mactiles').addEventListener('change', (e) => save({ macTiles: e.target.checked }));
