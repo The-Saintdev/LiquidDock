@@ -1,19 +1,43 @@
 {
-  "name": "liquidlaunch",
+  "name": "liquidhome",
   "version": "0.1.0",
-  "description": "LiquidLaunch — a macOS Launchpad-style app launcher for Windows 11, matching LiquidDock.",
+  "description": "LiquidHome — a macOS-style desktop shell / launcher for Windows 11.",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --windowed",
     "shell": "electron . --shell",
-    "smoke": "electron . --smoke"
+    "smoke": "electron . --smoke",
+    "dist": "electron-builder"
   },
   "author": "Cloudex Labs",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^43.2.0"
+    "electron": "^43.2.0",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "koffi": "^3.1.2"
+  },
+  "build": {
+    "appId": "com.cloudexlabs.liquidhome",
+    "productName": "LiquidHome",
+    "files": [
+      "src/**/*",
+      "icons/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/koffi/**/*"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "runAfterFinish": false
+    }
   }
 }

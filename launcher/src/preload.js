@@ -15,4 +15,6 @@ contextBridge.exposeInMainWorld('liquid', {
   minimize: () => ipcRenderer.send('minimize'),
   quit: () => ipcRenderer.send('quit'),
   desktopAction: (a) => ipcRenderer.send('desktop-action', a),
+  getBoot: () => ipcRenderer.invoke('get-boot'),
+  setBoot: (on) => ipcRenderer.invoke('set-boot', on),
 });

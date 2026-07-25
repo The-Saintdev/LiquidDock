@@ -1,4 +1,6 @@
 // LiquidHome — macOS-style shell.
+window.addEventListener('error', (e) => console.log('WINDOW ERROR: ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno));
+window.addEventListener('unhandledrejection', (e) => console.log('UNHANDLED: ' + ((e.reason && e.reason.message) || e.reason)));
 
 let apps = [];
 let cfg = null;
@@ -239,6 +241,8 @@ function bindSettings() {
   $('s-clock24').addEventListener('change', (e) => save({ clock24: e.target.checked }));
   for (const w of ['weather', 'system', 'uptime', 'calendar', 'notes', 'photos']) $('s-w-' + w).addEventListener('change', (e) => save({ widgets: { [w]: e.target.checked } }));
   $('s-addphoto').addEventListener('click', addPhoto);
+  window.liquid.getBoot().then((on) => { $('s-boot').checked = on; });
+  $('s-boot').addEventListener('change', async (e) => { const on = await window.liquid.setBoot(e.target.checked); e.target.checked = on; });
   $('s-close').addEventListener('click', closeOverlays);
 }
 

@@ -16,7 +16,9 @@ const { exec } = require('child_process');
 const desktop = require('./win32-desktop.js');
 
 const isSmoke = process.argv.includes('--smoke');
-const isShell = process.argv.includes('--shell'); // desktop-takeover mode
+// The installed app IS the launcher: default to takeover mode when packaged.
+// `--windowed` forces the normal dev window; `--shell` forces takeover.
+const isShell = process.argv.includes('--shell') || (app.isPackaged && !process.argv.includes('--windowed'));
 let homeWin = null;
 let bgWins = [];
 
@@ -91,9 +93,10 @@ function createHome() {
   };
   if (isShell) {
     // Desktop-takeover: full-screen INTERACTIVE window on the primary monitor.
-    // (Not parented to the wallpaper layer — that layer is non-interactive.)
+    // Height is 1px short of the monitor so Windows does NOT treat it as an
+    // exclusive-fullscreen app — that keeps the (topmost) taskbar visible over it.
     const b = screen.getPrimaryDisplay().bounds;
-    homeWin = new BrowserWindow({ ...base, x: b.x, y: b.y, width: b.width, height: b.height,
+    homeWin = new BrowserWindow({ ...base, x: b.x, y: b.y, width: b.width, height: b.height - 1,
       resizable: false, movable: false, skipTaskbar: true, alwaysOnTop: false });
   } else {
     homeWin = new BrowserWindow({ ...base, width: 1280, height: 820, minWidth: 940, minHeight: 640 });
@@ -104,27 +107,6 @@ function createHome() {
   if (isShell) q.push('shell=1');
   homeWin.loadFile(path.join(__dirname, 'home', 'index.html'), { search: q.join('&') });
   homeWin.once('ready-to-show', () => { if (!isSmoke) homeWin.show(); });
-
-  if (isShell && !isSmoke) createBackgroundWindows();
-}
-
-// Cover every OTHER monitor with just the chosen background.
-function createBackgroundWindows() {
-  const primaryId = screen.getPrimaryDisplay().id;
-  for (const d of screen.getAllDisplays()) {
-    if (d.id === primaryId) continue;
-    const b = d.bounds;
-    const w = new BrowserWindow({
-      x: b.x, y: b.y, width: b.width, height: b.height,
-      frame: false, skipTaskbar: true, focusable: false, resizable: false, movable: false,
-      backgroundColor: '#0e1018', show: false,
-      webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
-    });
-    w.loadFile(path.join(__dirname, 'home', 'index.html'), { search: 'bg=1' });
-    w.setIgnoreMouseEvents(true, { forward: true });
-    w.once('ready-to-show', () => w.showInactive());
-    bgWins.push(w);
-  }
 }
 
 /* ---------------- Lifecycle ---------------- */
@@ -157,6 +139,13 @@ ipcMain.handle('get-apps', () => enumerateApps());
 ipcMain.on('launch', (_e, p) => shell.openPath(p));
 ipcMain.on('minimize', () => { if (homeWin) homeWin.minimize(); });
 ipcMain.on('quit', () => app.quit());
+
+// Launch on Windows startup (packaged app registers its own exe).
+ipcMain.handle('get-boot', () => app.getLoginItemSettings().openAtLogin);
+ipcMain.handle('set-boot', (_e, on) => {
+  app.setLoginItemSettings({ openAtLogin: !!on, name: 'LiquidHome' });
+  return app.getLoginItemSettings().openAtLogin;
+});
 
 // Desktop right-click actions (our own menu, real Windows actions).
 ipcMain.on('desktop-action', (_e, action) => {
