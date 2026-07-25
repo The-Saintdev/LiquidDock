@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — LiquidHome pivot (2026-07-25)
+
+Reframed from "launcher + pinned widgets" into a single **custom home shell**
+(HiOS/XOS-style), after the transparent desktop-pinned board rendered as an
+opaque blank sheet over the primary monitor (Windows won't composite per-pixel
+alpha for a window re-parented into Progman).
+
+- **Safe dev model:** LiquidHome runs as a **normal, opaque, closable window** —
+  it never pins to the desktop or covers the screen. Desktop takeover becomes an
+  opt-in mode later, once the design is locked. `win32-desktop.js` kept for that.
+- Consolidated the two windows into one `src/home/` shell: designed background,
+  top bar (clock + search + minimize/quit), widgets strip (weather/system/
+  calendar), and a paged app grid.
+- **Switchable background:** our designed gradient ↔ the user's current Windows
+  wallpaper (read from `TranscodedWallpaper`), remembered in localStorage.
+- Removed `src/renderer/` and `src/board/`; hot-corner + acrylic overlay dropped.
+- Global Ctrl+Alt+Q quits; window has visible minimize + quit buttons.
+
 ## Unreleased — 2026-07-24
 
 ### LiquidLaunch v0.3 — desktop widget layer rearchitecture

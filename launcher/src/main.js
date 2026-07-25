@@ -1,19 +1,20 @@
-// LiquidLaunch — main process.
-// Two layers:
-//   1. Board  — widgets pinned to the desktop wallpaper (behind windows).
-//   2. Launcher — the Launchpad app grid, summoned from the top-left hot corner.
-// LiquidDock (the taskbar) is untouched. Cloudex Labs — MIT.
+// LiquidHome — main process.
+// A custom home shell (HiOS/XOS-style) for Windows 11.
+//
+// SAFE DEV MODE: runs as a normal, closable window — it never pins to the
+// desktop or covers your screen. Once the design is locked, a later build adds
+// an opt-in "desktop takeover" mode (src/win32-desktop.js is kept for that).
+//
+// Cloudex Labs — MIT.
 
-const { app, BrowserWindow, ipcMain, shell, globalShortcut, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const https = require('https');
-const desktop = require('./win32-desktop.js');
 
 const isSmoke = process.argv.includes('--smoke');
-let launchWin = null;
-let boardWin = null;
+let homeWin = null;
 
 /* ---------------- App enumeration ---------------- */
 const START_DIRS = [
@@ -49,72 +50,19 @@ async function enumerateApps() {
   return apps;
 }
 
-/* ---------------- Windows ---------------- */
-function targetDisplay() {
-  return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-}
-
-function createLauncher() {
-  const b = targetDisplay().bounds;
-  launchWin = new BrowserWindow({
-    x: b.x, y: b.y, width: b.width, height: b.height,
-    frame: false, resizable: false, movable: false, skipTaskbar: true,
-    show: false, transparent: false, backgroundColor: '#00000000',
-    backgroundMaterial: 'acrylic', alwaysOnTop: true,
+/* ---------------- Window ---------------- */
+function createHome() {
+  homeWin = new BrowserWindow({
+    width: 1280, height: 820, minWidth: 940, minHeight: 640,
+    frame: false, backgroundColor: '#0e1018', show: false, title: 'LiquidHome',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
     },
   });
-  launchWin.setAlwaysOnTop(true, 'screen-saver');
   const opts = isSmoke ? { search: 'smoke' } : {};
-  launchWin.loadFile(path.join(__dirname, 'renderer', 'index.html'), opts);
-}
-
-function showLauncher() {
-  if (!launchWin || launchWin.isDestroyed()) createLauncher();
-  const b = targetDisplay().bounds;
-  launchWin.setBounds({ x: b.x, y: b.y, width: b.width, height: b.height });
-  launchWin.show();
-  launchWin.focus();
-  launchWin.webContents.send('reset');
-}
-function hideLauncher() { if (launchWin && !launchWin.isDestroyed()) launchWin.hide(); }
-function toggleLauncher() { (launchWin && launchWin.isVisible()) ? hideLauncher() : showLauncher(); }
-
-function createBoard() {
-  const b = screen.getPrimaryDisplay().bounds;
-  boardWin = new BrowserWindow({
-    x: b.x, y: b.y, width: b.width, height: b.height,
-    frame: false, transparent: true, resizable: false, movable: false,
-    skipTaskbar: true, focusable: false, show: false, hasShadow: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, nodeIntegration: false,
-    },
-  });
-  boardWin.setIgnoreMouseEvents(true, { forward: true }); // click-through to desktop
-  boardWin.loadFile(path.join(__dirname, 'board', 'index.html'));
-  boardWin.once('ready-to-show', () => {
-    boardWin.showInactive();
-    if (isSmoke) return;
-    try {
-      const hwnd = boardWin.getNativeWindowHandle().readBigUInt64LE();
-      const r = desktop.pinToDesktop(hwnd);
-      console.log('[board] pin:', JSON.stringify(r));
-    } catch (e) { console.log('[board] pin failed:', e); }
-  });
-}
-
-/* ---------------- Hot corner (top-left) ---------------- */
-let cornerArmed = true;
-function pollCorner() {
-  if (!launchWin) return;
-  const p = screen.getCursorScreenPoint();
-  const d = screen.getDisplayNearestPoint(p).bounds;
-  const inCorner = p.x <= d.x + 2 && p.y <= d.y + 2;
-  if (inCorner && cornerArmed && !launchWin.isVisible()) { cornerArmed = false; showLauncher(); }
-  else if (!inCorner && (p.x > d.x + 140 || p.y > d.y + 140)) cornerArmed = true;
+  homeWin.loadFile(path.join(__dirname, 'home', 'index.html'), opts);
+  homeWin.once('ready-to-show', () => { if (!isSmoke) homeWin.show(); });
 }
 
 /* ---------------- Lifecycle ---------------- */
@@ -122,38 +70,38 @@ const gotLock = isSmoke ? true : app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on('second-instance', showLauncher);
+  app.on('second-instance', () => { if (homeWin) { homeWin.show(); homeWin.focus(); } });
   app.whenReady().then(() => {
-    createBoard();
-    createLauncher();
-    globalShortcut.register('Control+Alt+Space', toggleLauncher);
+    createHome();
     globalShortcut.register('Control+Alt+Q', () => app.quit());
+    globalShortcut.register('Control+Alt+Space', () => { if (homeWin) { homeWin.show(); homeWin.focus(); } });
 
     if (isSmoke) {
       const resultPath = path.join(__dirname, '..', 'smoke-result.json');
       const logs = [];
       const rec = (tag, parts) => logs.push({ tag, parts });
-      launchWin.webContents.on('console-message', (...a) => rec('launcher', a.map((x) => (x && typeof x === 'object') ? (x.message ?? '[obj]') : x)));
-      boardWin.webContents.on('console-message', (...a) => rec('board', a.map((x) => (x && typeof x === 'object') ? (x.message ?? '[obj]') : x)));
-      launchWin.webContents.on('did-fail-load', (_e, c, d) => rec('launcher-fail', [c, d]));
-      boardWin.webContents.on('did-fail-load', (_e, c, d) => rec('board-fail', [c, d]));
+      homeWin.webContents.on('console-message', (...a) => rec('home', a.map((x) => (x && typeof x === 'object') ? (x.message ?? '[obj]') : x)));
+      homeWin.webContents.on('did-fail-load', (_e, c, d) => rec('fail', [c, d]));
       process.on('uncaughtException', (e) => rec('main-uncaught', [String(e && e.stack)]));
-      rec('probe', [JSON.stringify(desktop.probe())]);
       setTimeout(() => { try { fs.writeFileSync(resultPath, JSON.stringify(logs, null, 2)); } catch {} app.quit(); }, 7000);
-      return;
     }
-
-    setInterval(pollCorner, 120);
   });
-  app.on('window-all-closed', () => { /* stay resident */ });
+  app.on('window-all-closed', () => app.quit());
   app.on('will-quit', () => globalShortcut.unregisterAll());
 }
 
 /* ---------------- IPC ---------------- */
 ipcMain.handle('get-apps', () => enumerateApps());
-ipcMain.on('launch', (_e, p) => { shell.openPath(p); hideLauncher(); });
-ipcMain.on('hide', hideLauncher);
+ipcMain.on('launch', (_e, p) => shell.openPath(p));
+ipcMain.on('minimize', () => { if (homeWin) homeWin.minimize(); });
 ipcMain.on('quit', () => app.quit());
+
+ipcMain.handle('get-wallpaper', () => {
+  try {
+    const p = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Themes', 'TranscodedWallpaper');
+    return 'data:image/jpeg;base64,' + fs.readFileSync(p).toString('base64');
+  } catch { return null; }
+});
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function cpuSample() {
@@ -172,7 +120,7 @@ ipcMain.handle('get-system', async () => ({
 
 function getJSON(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'LiquidLaunch' } }, (r) => {
+    https.get(url, { headers: { 'User-Agent': 'LiquidHome' } }, (r) => {
       let d = ''; r.on('data', (c) => (d += c));
       r.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
     }).on('error', reject);
