@@ -1,4 +1,4 @@
-/* LiquidHome — macOS-style shell. Menu bar + desktop widgets + Launchpad + Settings. */
+/* LiquidHome — macOS-style shell. */
 
 * { box-sizing: border-box; }
 :root { --icon: 44px; --cols: 7; }
@@ -9,50 +9,58 @@ html, body {
   color: #fff; user-select: none; cursor: default;
 }
 
-/* ---- Background ---- */
-#bg {
-  position: fixed; inset: 0; z-index: 0;
-  background:
-    radial-gradient(90% 70% at 15% 10%, #2a3358 0%, transparent 55%),
-    radial-gradient(80% 70% at 90% 20%, #3a2a55 0%, transparent 50%),
-    radial-gradient(100% 90% at 50% 110%, #21324f 0%, transparent 60%),
-    linear-gradient(160deg, #0f1220 0%, #0b0d16 100%);
-  background-size: cover; background-position: center;
-}
+/* ---- Background + gradient presets ---- */
+#bg { position: fixed; inset: 0; z-index: 0; background-size: cover; background-position: center; }
+body.grad-aurora   #bg { background: radial-gradient(80% 70% at 20% 15%, #124a3f 0%, transparent 55%), radial-gradient(70% 70% at 85% 25%, #123a6a 0%, transparent 50%), radial-gradient(90% 90% at 50% 110%, #1c5a52 0%, transparent 60%), linear-gradient(160deg, #0c1418 0%, #0a0f14 100%); }
+body.grad-midnight #bg { background: radial-gradient(90% 70% at 15% 10%, #2a3358 0%, transparent 55%), radial-gradient(80% 70% at 90% 20%, #3a2a55 0%, transparent 50%), radial-gradient(100% 90% at 50% 110%, #21324f 0%, transparent 60%), linear-gradient(160deg, #0f1220 0%, #0b0d16 100%); }
+body.grad-sunset   #bg { background: radial-gradient(80% 70% at 20% 10%, #7a2f4f 0%, transparent 55%), radial-gradient(75% 70% at 88% 18%, #b5533a 0%, transparent 50%), radial-gradient(95% 90% at 50% 115%, #4a2a5e 0%, transparent 60%), linear-gradient(160deg, #1a1016 0%, #120b12 100%); }
+body.grad-ocean    #bg { background: radial-gradient(85% 70% at 18% 12%, #0f3f6b 0%, transparent 55%), radial-gradient(75% 70% at 88% 22%, #10557a 0%, transparent 50%), radial-gradient(95% 90% at 50% 112%, #0c2f57 0%, transparent 60%), linear-gradient(160deg, #08131f 0%, #060d16 100%); }
+body.grad-graphite #bg { background: radial-gradient(85% 70% at 20% 12%, #2f333a 0%, transparent 55%), radial-gradient(75% 70% at 88% 22%, #23262c 0%, transparent 50%), linear-gradient(160deg, #17191f 0%, #101116 100%); }
+body.grad-rose     #bg { background: radial-gradient(80% 70% at 20% 12%, #6e2447 0%, transparent 55%), radial-gradient(75% 70% at 88% 20%, #8a3b6e 0%, transparent 50%), radial-gradient(95% 90% at 50% 115%, #3a2350 0%, transparent 60%), linear-gradient(160deg, #17101a 0%, #100b14 100%); }
 #scrim { position: fixed; inset: 0; z-index: 1; background: rgba(10,12,20,0.35); opacity: 0; transition: opacity 0.4s ease; pointer-events: none; }
 body.wallpaper #scrim { opacity: 1; }
+body.wallpaper #bg { background-image: var(--wallpaper); }
 
-/* ---- Menu bar (macOS) ---- */
+/* ---- Menu bar ---- */
 #menubar {
   position: fixed; top: 0; left: 0; right: 0; height: 30px; z-index: 20;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 12px; -webkit-app-region: drag;
-  background: rgba(20, 22, 30, 0.42);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
+  -webkit-app-region: drag; background: rgba(20,22,30,0.42);
   backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px;
 }
+body.shell #menubar { -webkit-app-region: no-drag; }
 .mb-left, .mb-right { display: flex; align-items: center; gap: 4px; }
-.mb-item {
-  -webkit-app-region: no-drag;
-  background: transparent; border: 0; color: rgba(255,255,255,0.9);
-  font: inherit; padding: 3px 9px; border-radius: 7px; cursor: pointer;
-}
+.mb-item { -webkit-app-region: no-drag; background: transparent; border: 0; color: rgba(255,255,255,0.9); font: inherit; padding: 3px 9px; border-radius: 7px; cursor: pointer; }
 button.mb-item:hover { background: rgba(255,255,255,0.16); }
-.mb-title { font-weight: 600; cursor: default; }
+#mb-logo { font-size: 15px; }
 .mb-status { color: rgba(255,255,255,0.82); cursor: default; padding: 3px 6px; }
-#mb-logo { font-size: 14px; }
-#mb-logo::before { content: ""; }
 #dev-controls { display: inline-flex; gap: 2px; margin-left: 4px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,0.14); }
 body.shell #dev-controls { display: none; }
 #quit:hover { background: rgba(240,90,90,0.4) !important; }
 
-/* ---- Desktop + widgets ---- */
+/* ---- Desktop ---- */
 #desktop { position: absolute; inset: 30px 0 0 0; z-index: 2; }
-#widgets { position: absolute; top: 34px; right: 34px; width: 280px; display: flex; flex-direction: column; gap: 18px; }
+
+#photos { position: absolute; top: 40px; left: 40px; display: flex; gap: 16px; }
+.frame {
+  width: 132px; height: 132px; border-radius: 22px; overflow: hidden; cursor: pointer;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center; position: relative;
+  transition: transform 0.16s ease;
+}
+.frame:hover { transform: translateY(-3px) scale(1.03); }
+.frame img { width: 100%; height: 100%; object-fit: cover; }
+.frame .add { font-size: 32px; color: rgba(255,255,255,0.35); font-weight: 200; }
+.frame .clear { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: 0; font-size: 13px; cursor: pointer; display: none; align-items: center; justify-content: center; }
+.frame:hover .clear { display: flex; }
+#photos.hidden { display: none; }
+
+#widgets { position: absolute; top: 40px; right: 34px; width: 280px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 90px); overflow-y: auto; scrollbar-width: none; }
+#widgets::-webkit-scrollbar { display: none; }
 .card {
-  background: rgba(22, 24, 32, 0.5); border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 20px; padding: 18px 20px;
+  background: rgba(22,24,32,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 18px 20px;
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 12px 34px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.24);
 }
@@ -65,85 +73,53 @@ body.shell #dev-controls { display: none; }
 .stat { margin: 9px 0; }
 .stat-label { display: flex; justify-content: space-between; font-size: 12.5px; color: rgba(255,255,255,0.82); margin-bottom: 5px; }
 .bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,0.14); overflow: hidden; }
-.bar > i { display: block; height: 100%; width: 0%; border-radius: 4px; background: linear-gradient(90deg, #6ea8ff, #9b8cff); transition: width 0.4s ease; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.bar > i { display: block; height: 100%; width: 0%; border-radius: 4px; background: linear-gradient(90deg,#6ea8ff,#9b8cff); transition: width 0.4s ease; }
+.uptime-val { font-size: 26px; font-weight: 300; }
+.uptime-host { margin-top: 4px; font-size: 12.5px; color: rgba(255,255,255,0.6); }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
 .cal-grid span { text-align: center; font-size: 11.5px; padding: 3px 0; color: rgba(255,255,255,0.85); border-radius: 7px; }
 .cal-grid .head { color: rgba(255,255,255,0.4); font-size: 10px; }
 .cal-grid .today { background: rgba(120,150,255,0.6); font-weight: 600; }
 .cal-grid .empty { color: transparent; }
+#notes-area { width: 100%; height: 88px; resize: none; border: 0; outline: none; background: transparent; color: #fff; font: inherit; font-size: 13.5px; line-height: 1.4; }
+#notes-area::placeholder { color: rgba(255,255,255,0.4); }
 
-/* ---- Overlays (Launchpad + Settings) ---- */
-.overlay {
-  position: fixed; inset: 0; z-index: 30;
-  background: rgba(10, 12, 20, 0.5);
-  backdrop-filter: blur(30px) saturate(1.2); -webkit-backdrop-filter: blur(30px) saturate(1.2);
-  display: flex; flex-direction: column; align-items: center;
-  opacity: 1; transition: opacity 0.2s ease;
-}
+/* ---- Overlays ---- */
+.overlay { position: fixed; inset: 0; z-index: 30; background: rgba(10,12,20,0.5); backdrop-filter: blur(30px) saturate(1.2); -webkit-backdrop-filter: blur(30px) saturate(1.2); display: flex; flex-direction: column; align-items: center; opacity: 1; transition: opacity 0.2s ease; }
 .overlay.hidden { opacity: 0; pointer-events: none; }
 #launchpad { animation: lpIn 0.24s cubic-bezier(0.2,0.8,0.2,1); }
 @keyframes lpIn { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: scale(1); } }
-
-#search {
-  margin-top: 60px; width: min(420px, 50vw); height: 40px; padding: 0 20px;
-  font-size: 15px; color: #fff; text-align: center;
-  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28);
-  border-radius: 20px; outline: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
-}
+#search { margin-top: 60px; width: min(420px,50vw); height: 40px; padding: 0 20px; font-size: 15px; color: #fff; text-align: center; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); border-radius: 20px; outline: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.3); }
 #search::placeholder { color: rgba(255,255,255,0.55); }
-
 #pages { flex: 1; display: flex; width: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; margin-top: 24px; }
 #pages::-webkit-scrollbar { display: none; }
-.page {
-  flex: 0 0 100%; scroll-snap-align: center;
-  display: grid; grid-template-columns: repeat(var(--cols), 1fr); grid-auto-rows: min-content;
-  align-content: start; justify-items: center; gap: 26px 8px; padding: 10px 8vw;
-}
+.page { flex: 0 0 100%; scroll-snap-align: center; display: grid; grid-template-columns: repeat(var(--cols),1fr); grid-auto-rows: min-content; align-content: start; justify-items: center; gap: 26px 8px; padding: 10px 8vw; }
 #pages.searching { scroll-snap-type: none; }
-#pages.searching .page { grid-template-columns: repeat(auto-fill, minmax(calc(var(--icon) + 52px), 1fr)); }
-
-.tile {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  width: calc(var(--icon) + 56px); padding: 8px; border-radius: 18px; cursor: pointer;
-  transition: transform 0.16s cubic-bezier(0.2,0.7,0.2,1);
-}
+#pages.searching .page { grid-template-columns: repeat(auto-fill, minmax(calc(var(--icon) + 52px),1fr)); }
+.tile { display: flex; flex-direction: column; align-items: center; gap: 8px; width: calc(var(--icon) + 56px); padding: 8px; border-radius: 18px; cursor: pointer; transition: transform 0.16s cubic-bezier(0.2,0.7,0.2,1); }
 .tile:hover { transform: translateY(-4px) scale(1.08); }
 .tile:active { transform: scale(0.95); }
-.tile .ico {
-  width: var(--icon); height: var(--icon); display: flex; align-items: center; justify-content: center;
-}
-/* macOS squircle tile behind each icon */
-body.mactiles .tile .ico {
-  border-radius: 24%;
-  background: linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05));
-  border: 1px solid rgba(255,255,255,0.18);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.3);
-}
+.tile .ico { width: var(--icon); height: var(--icon); display: flex; align-items: center; justify-content: center; }
+body.mactiles .tile .ico { border-radius: 24%; background: linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05)); border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 6px 16px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.3); }
 .tile img { width: 72%; height: 72%; object-fit: contain; pointer-events: none; }
 body:not(.mactiles) .tile img { width: 100%; height: 100%; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
 .tile span { font-size: 12px; line-height: 1.2; text-align: center; color: rgba(255,255,255,0.92); text-shadow: 0 1px 4px rgba(0,0,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: calc(var(--icon) + 48px); }
-
 #dots { display: flex; justify-content: center; gap: 7px; padding: 12px 0 26px; }
 #dots .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.28); cursor: pointer; transition: background 0.15s ease, transform 0.15s ease; }
 #dots .dot.active { background: rgba(255,255,255,0.85); transform: scale(1.15); }
 #empty { grid-column: 1 / -1; text-align: center; color: rgba(255,255,255,0.5); padding-top: 50px; font-size: 15px; }
 
-/* ---- Settings panel ---- */
+/* ---- Settings ---- */
 #settings { justify-content: center; }
-#settings .panel {
-  width: min(520px, 90vw); background: rgba(24, 26, 34, 0.72);
-  border: 1px solid rgba(255,255,255,0.16); border-radius: 22px; padding: 26px 28px;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.5); backdrop-filter: blur(20px);
-}
+#settings .panel { width: min(540px,90vw); max-height: 86vh; overflow-y: auto; background: rgba(24,26,34,0.72); border: 1px solid rgba(255,255,255,0.16); border-radius: 22px; padding: 26px 28px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); backdrop-filter: blur(20px); }
 #settings h2 { margin: 0 0 18px; font-size: 20px; font-weight: 600; }
 #settings .row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 0; border-top: 1px solid rgba(255,255,255,0.08); }
 #settings .row label { font-size: 14px; color: rgba(255,255,255,0.9); }
-#settings select, #settings input[type=range] { -webkit-app-region: no-drag; }
 #settings select { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 9px; padding: 6px 10px; font: inherit; }
 #settings select option { color: #000; }
 #settings input[type=range] { width: 180px; accent-color: #7f9bff; }
 #settings input[type=checkbox] { width: 18px; height: 18px; accent-color: #7f9bff; }
-#settings .checks { display: flex; gap: 14px; font-size: 13px; color: rgba(255,255,255,0.85); }
+#settings .checks { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: rgba(255,255,255,0.85); max-width: 320px; justify-content: flex-end; }
 #settings .checks label { display: inline-flex; align-items: center; gap: 5px; }
 #settings .val { min-width: 42px; text-align: right; color: rgba(255,255,255,0.7); font-size: 13px; }
 #settings .actions { margin-top: 20px; display: flex; justify-content: flex-end; }

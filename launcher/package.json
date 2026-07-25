@@ -4,7 +4,9 @@
   "description": "LiquidLaunch — a macOS Launchpad-style app launcher for Windows 11, matching LiquidDock.",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "shell": "electron . --shell",
+    "smoke": "electron . --smoke"
   },
   "author": "Cloudex Labs",
   "license": "MIT",

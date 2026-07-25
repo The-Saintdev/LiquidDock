@@ -7,13 +7,15 @@
 //
 // Cloudex Labs — MIT.
 
-const { app, BrowserWindow, ipcMain, shell, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, globalShortcut, dialog, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const https = require('https');
+const desktop = require('./win32-desktop.js');
 
 const isSmoke = process.argv.includes('--smoke');
+const isShell = process.argv.includes('--shell'); // desktop-takeover mode
 let homeWin = null;
 
 /* ---------------- App enumeration ---------------- */
@@ -78,17 +80,37 @@ async function enumerateApps() {
 
 /* ---------------- Window ---------------- */
 function createHome() {
-  homeWin = new BrowserWindow({
-    width: 1280, height: 820, minWidth: 940, minHeight: 640,
-    frame: false, backgroundColor: '#0e1018', show: false, title: 'LiquidHome',
+  const base = {
+    frame: false, backgroundColor: '#0e1018', show: false, title: 'Home',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
     },
+  };
+  if (isShell) {
+    // Desktop-takeover: opaque full-screen, pinned behind windows.
+    const b = screen.getPrimaryDisplay().bounds;
+    homeWin = new BrowserWindow({ ...base, x: b.x, y: b.y, width: b.width, height: b.height,
+      resizable: false, movable: false, skipTaskbar: true, focusable: true });
+  } else {
+    homeWin = new BrowserWindow({ ...base, width: 1280, height: 820, minWidth: 940, minHeight: 640 });
+  }
+
+  const q = [];
+  if (isSmoke) q.push('smoke=1');
+  if (isShell) q.push('shell=1');
+  homeWin.loadFile(path.join(__dirname, 'home', 'index.html'), { search: q.join('&') });
+
+  homeWin.once('ready-to-show', () => {
+    if (isSmoke) return;
+    homeWin.show();
+    if (isShell) {
+      try {
+        const hwnd = homeWin.getNativeWindowHandle().readBigUInt64LE();
+        console.log('[shell] pin:', JSON.stringify(desktop.pinToDesktop(hwnd)));
+      } catch (e) { console.log('[shell] pin failed:', e); }
+    }
   });
-  const opts = isSmoke ? { search: 'smoke' } : {};
-  homeWin.loadFile(path.join(__dirname, 'home', 'index.html'), opts);
-  homeWin.once('ready-to-show', () => { if (!isSmoke) homeWin.show(); });
 }
 
 /* ---------------- Lifecycle ---------------- */
@@ -132,11 +154,14 @@ ipcMain.handle('get-wallpaper', () => {
 /* ---- Persisted settings (so nothing needs code edits) ---- */
 const CONFIG_DEFAULTS = {
   background: 'designed',        // 'designed' | 'wallpaper'
+  gradient: 'aurora',           // preset used when background === 'designed'
   iconSize: 44,                  // px — smaller by default
   columns: 7,                    // Launchpad columns
   macTiles: true,               // squircle tiles behind icons
   clock24: false,
-  widgets: { weather: true, system: true, calendar: true },
+  notes: '',                     // sticky-note widget text
+  photos: ['', '', ''],          // photo-frame data URLs
+  widgets: { weather: true, system: true, calendar: true, uptime: true, notes: true, photos: true },
 };
 function configPath() { return path.join(app.getPath('userData'), 'liquidhome-config.json'); }
 function loadConfig() {
@@ -164,8 +189,23 @@ async function cpuUsage() {
   return total > 0 ? 1 - idle / total : 0;
 }
 ipcMain.handle('get-system', async () => ({
-  cpu: await cpuUsage(), memUsed: os.totalmem() - os.freemem(), memTotal: os.totalmem(), host: os.hostname(),
+  cpu: await cpuUsage(), memUsed: os.totalmem() - os.freemem(), memTotal: os.totalmem(),
+  host: os.hostname(), uptime: os.uptime(),
 }));
+
+ipcMain.handle('pick-image', async () => {
+  try {
+    const r = await dialog.showOpenDialog(homeWin, {
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
+    });
+    if (r.canceled || !r.filePaths[0]) return null;
+    const p = r.filePaths[0];
+    const ext = path.extname(p).slice(1).toLowerCase();
+    const mime = ext === 'jpg' ? 'jpeg' : ext;
+    return `data:image/${mime};base64,` + fs.readFileSync(p).toString('base64');
+  } catch { return null; }
+});
 
 function getJSON(url) {
   return new Promise((resolve, reject) => {

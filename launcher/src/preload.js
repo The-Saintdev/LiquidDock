@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('liquid', {
   getWallpaper: () => ipcRenderer.invoke('get-wallpaper'),
   getConfig: () => ipcRenderer.invoke('get-config'),
   setConfig: (c) => ipcRenderer.invoke('set-config', c),
+  pickImage: () => ipcRenderer.invoke('pick-image'),
   minimize: () => ipcRenderer.send('minimize'),
   quit: () => ipcRenderer.send('quit'),
 });

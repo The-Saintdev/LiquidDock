@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; img-src data:; style-src 'self' 'unsafe-inline'; script-src 'self';" />
-  <title>LiquidHome</title>
+  <title>Home</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -14,13 +14,11 @@
   <!-- macOS-style menu bar -->
   <div id="menubar">
     <div class="mb-left">
-      <button id="mb-logo" class="mb-item" title="LiquidHome"></button>
-      <span class="mb-item mb-title">LiquidHome</span>
-      <button id="open-launchpad" class="mb-item">Launchpad</button>
+      <button id="mb-logo" class="mb-item" title="Launchpad">◱</button>
     </div>
     <div class="mb-right">
-      <span id="mb-weather" class="mb-item mb-status">–</span>
-      <span id="mb-battery" class="mb-item mb-status">–</span>
+      <span id="mb-weather" class="mb-item mb-status"></span>
+      <span id="mb-battery" class="mb-item mb-status"></span>
       <button id="open-settings" class="mb-item" title="Settings">⚙</button>
       <span id="mb-clock" class="mb-item mb-status">--:--</span>
       <span id="dev-controls">
@@ -30,8 +28,16 @@
     </div>
   </div>
 
-  <!-- Desktop: widgets on the wallpaper -->
+  <!-- Desktop -->
   <div id="desktop">
+    <!-- Photo frames (add your own images) -->
+    <div id="photos">
+      <div class="frame" data-i="0"><span class="add">＋</span></div>
+      <div class="frame" data-i="1"><span class="add">＋</span></div>
+      <div class="frame" data-i="2"><span class="add">＋</span></div>
+    </div>
+
+    <!-- Widgets -->
     <div id="widgets">
       <div class="card weather" data-w="weather">
         <h3>Weather</h3>
@@ -44,27 +50,45 @@
         <div class="stat"><div class="stat-label"><span>Memory</span><span class="mem-val">–</span></div><div class="bar"><i class="mem-bar"></i></div></div>
         <div class="stat"><div class="stat-label"><span>Battery</span><span class="bat-val">–</span></div><div class="bar"><i class="bat-bar"></i></div></div>
       </div>
+      <div class="card uptime" data-w="uptime">
+        <h3>Uptime</h3>
+        <div class="uptime-val">–</div>
+        <div class="uptime-host"></div>
+      </div>
       <div class="card calendar" data-w="calendar">
         <h3 class="cal-title">Calendar</h3>
         <div class="cal-grid"></div>
       </div>
+      <div class="card notes" data-w="notes">
+        <h3>Notes</h3>
+        <textarea id="notes-area" placeholder="Type a note…" spellcheck="false"></textarea>
+      </div>
     </div>
   </div>
 
-  <!-- Launchpad overlay (the mac "app menu") -->
+  <!-- Launchpad -->
   <div id="launchpad" class="overlay hidden">
     <input id="search" type="text" placeholder="Search" autocomplete="off" spellcheck="false" />
     <div id="pages"></div>
     <div id="dots"></div>
   </div>
 
-  <!-- Settings overlay -->
+  <!-- Settings -->
   <div id="settings" class="overlay hidden">
     <div class="panel">
       <h2>Settings</h2>
-
       <div class="row"><label>Background</label>
         <select id="s-bg"><option value="designed">Designed gradient</option><option value="wallpaper">My Windows wallpaper</option></select>
+      </div>
+      <div class="row" id="row-gradient"><label>Gradient</label>
+        <select id="s-gradient">
+          <option value="aurora">Aurora</option>
+          <option value="midnight">Midnight</option>
+          <option value="sunset">Sunset</option>
+          <option value="ocean">Ocean</option>
+          <option value="graphite">Graphite</option>
+          <option value="rose">Rose</option>
+        </select>
       </div>
       <div class="row"><label>App icon size</label>
         <input id="s-iconsize" type="range" min="32" max="72" step="2" /><span id="s-iconsize-val" class="val"></span>
@@ -78,14 +102,14 @@
         <span class="checks">
           <label><input id="s-w-weather" type="checkbox" /> Weather</label>
           <label><input id="s-w-system" type="checkbox" /> System</label>
+          <label><input id="s-w-uptime" type="checkbox" /> Uptime</label>
           <label><input id="s-w-calendar" type="checkbox" /> Calendar</label>
+          <label><input id="s-w-notes" type="checkbox" /> Notes</label>
+          <label><input id="s-w-photos" type="checkbox" /> Photos</label>
         </span>
       </div>
-
-      <div class="actions">
-        <button id="s-close" class="btn">Done</button>
-      </div>
-      <p class="hint">Settings are saved automatically. Esc closes overlays.</p>
+      <div class="actions"><button id="s-close" class="btn">Done</button></div>
+      <p class="hint">Settings save automatically · Esc closes overlays · Ctrl+Alt+Q quits</p>
     </div>
   </div>
 

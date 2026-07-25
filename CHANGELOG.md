@@ -1,6 +1,19 @@
 # Changelog
 
-## Unreleased — LiquidHome macOS shell (2026-07-25)
+## Unreleased — LiquidHome widgets + gradients + takeover mode (2026-07-25)
+
+- **New widgets:** Uptime, editable **Notes** (persisted), and **Photo frames**
+  — rounded slots you fill with your own images via a file picker (saved as data
+  URLs in config). All toggleable in Settings.
+- **6 gradient presets** (Aurora, Midnight, Sunset, Ocean, Graphite, Rose),
+  chosen in Settings when using the designed background.
+- **De-branded / more mac:** removed the "LiquidHome" wordmark from the menu bar;
+  left side is now just a Launchpad glyph, right side is the mac-style status area.
+- **Desktop takeover mode (`npm run shell` / `--shell`):** opaque full-screen
+  window pinned behind app windows via `SetParent` into Progman (opaque, so no
+  blank-sheet bug). `body.shell` hides the dev window controls. Ctrl+Alt+Q always
+  quits. Keyboard focus for Launchpad search in this mode is a known follow-up.
+- Main: image picker dialog, `os.uptime()`, expanded persisted config.
 
 - **macOS layout:** added a top **menu bar** (logo, Launchpad, weather/battery/
   clock status, ⚙ settings). Apps moved off the desktop into a **Launchpad**
